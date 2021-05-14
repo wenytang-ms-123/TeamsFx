@@ -57,7 +57,7 @@ export class WebviewPanel {
         // Enable javascript in the webview
         enableScripts: true,
         retainContextWhenHidden: true,
-        localResourceRoots: [vscode.Uri.file(path.join(this.extensionPath, "out"))]
+        localResourceRoots: [vscode.Uri.file(path.join(this.extensionPath, "out"))],
       }
     );
 
@@ -84,7 +84,7 @@ export class WebviewPanel {
                 canSelectFiles: false,
                 canSelectFolders: true,
                 canSelectMany: false,
-                title: "Select folder to clone the sample app"
+                title: "Select folder to clone the sample app",
               });
               if (folder !== undefined) {
                 const dialogManager = DialogManager.getInstance();
@@ -130,6 +130,8 @@ export class WebviewPanel {
           case Commands.SwitchPanel:
             WebviewPanel.createOrShow(this.extensionPath, msg.data);
             break;
+          case Commands.InitAccountInfo:
+            this.setStatusChangeMap();
           default:
             break;
         }
@@ -137,44 +139,6 @@ export class WebviewPanel {
       undefined,
       ext.context.subscriptions
     );
-
-    AppStudioTokenInstance.setStatusChangeMap(
-      "quick-start-webview",
-      (status, token, accountInfo) => {
-        let email = undefined;
-        if (status === "SignedIn") {
-          email = (accountInfo as any).upn ? (accountInfo as any).upn : undefined;
-        }
-
-        if (this.panel && this.panel.webview) {
-          this.panel.webview.postMessage({
-            message: "m365AccountChange",
-            data: email
-          });
-        }
-
-        return Promise.resolve();
-      }
-    );
-
-    AzureAccountManager.setStatusChangeMap("quick-start-webview", (status, token, accountInfo) => {
-      let email = undefined;
-      if (status === "SignedIn") {
-        const token = AzureAccountManager.getAccountCredential();
-        if (token !== undefined) {
-          email = (token as any).username ? (token as any).username : undefined;
-        }
-      }
-
-      if (this.panel && this.panel.webview) {
-        this.panel.webview.postMessage({
-          message: "azureAccountChange",
-          data: email
-        });
-      }
-
-      return Promise.resolve();
-    });
 
     // Set the webview's initial html content
     this.panel.webview.html = this.getHtmlForWebview(panelType);
@@ -196,7 +160,7 @@ export class WebviewPanel {
       retries--;
       try {
         result = await axios.get(url, {
-          responseType: "arraybuffer"
+          responseType: "arraybuffer",
         });
         if (result.status === 200 || result.status === 201) {
           return result;
@@ -225,6 +189,46 @@ export class WebviewPanel {
           await fs.writeFile(filePath, data);
         })
     );
+  }
+
+  private setStatusChangeMap() {
+    AppStudioTokenInstance.setStatusChangeMap(
+      "quick-start-webview",
+      (status, token, accountInfo) => {
+        let email = undefined;
+        if (status === "SignedIn") {
+          email = (accountInfo as any).upn ? (accountInfo as any).upn : undefined;
+        }
+
+        if (this.panel && this.panel.webview) {
+          this.panel.webview.postMessage({
+            message: "m365AccountChange",
+            data: email,
+          });
+        }
+
+        return Promise.resolve();
+      }
+    );
+
+    AzureAccountManager.setStatusChangeMap("quick-start-webview", (status, token, accountInfo) => {
+      let email = undefined;
+      if (status === "SignedIn") {
+        const token = AzureAccountManager.getAccountCredential();
+        if (token !== undefined) {
+          email = (token as any).username ? (token as any).username : undefined;
+        }
+      }
+
+      if (this.panel && this.panel.webview) {
+        this.panel.webview.postMessage({
+          message: "azureAccountChange",
+          data: email,
+        });
+      }
+
+      return Promise.resolve();
+    });
   }
 
   private getHtmlForWebview(panelType: PanelType) {
