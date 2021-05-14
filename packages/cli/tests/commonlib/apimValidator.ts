@@ -277,7 +277,7 @@ export class ApimValidator {
       `/servicePrincipals?$filter=appId eq '${config?.clientId}'`
     );
     const servicePrincipals = servicePrincipalResponse?.data?.value as any[];
-    chai.assert.isNotEmpty(servicePrincipals, JSON.stringify(servicePrincipalResponse));
+    chai.assert.isNotEmpty(servicePrincipals, JSON.stringify(servicePrincipalResponse?.data));
     chai.assert.include(
       servicePrincipals.map((sp) => sp.appId as string),
       config?.clientId
