@@ -275,11 +275,20 @@ export class ApimValidator {
     chai.assert.include(knownClientApplications, config?.apimClientAADClientId);
 
     chai.assert.isNotEmpty(config?.clientId);
-    const servicePrincipalResponse = await this.axiosInstance?.get(
-      `/servicePrincipals?$filter=appId eq '${config?.clientId}'`
-    );
-    const servicePrincipals = servicePrincipalResponse?.data?.value as any[];
-    chai.assert.isNotEmpty(servicePrincipals, JSON.stringify(servicePrincipalResponse?.data));
+
+    let servicePrincipals: any[] = [];
+    for (let i = 0; i < 3; ++i) {
+      const servicePrincipalResponse = await this.axiosInstance?.get(
+        `/servicePrincipals?$filter=appId eq '${config?.clientId}'`
+      );
+      servicePrincipals = servicePrincipalResponse?.data?.value as any[];
+      if (!servicePrincipals && servicePrincipals.length > 0) {
+        break;
+      }
+      console.log(`ServicePrincipals Response: ${JSON.stringify(servicePrincipalResponse?.data)}`);
+    }
+
+    chai.assert.isNotEmpty(servicePrincipals);
     chai.assert.include(
       servicePrincipals.map((sp) => sp.appId as string),
       config?.clientId
