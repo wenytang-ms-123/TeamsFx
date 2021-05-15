@@ -266,10 +266,12 @@ export class ApimValidator {
   private static async validateAppAad(config: Config): Promise<any> {
     chai.assert.isNotEmpty(config?.objectId);
     chai.assert.isNotEmpty(config?.apimClientAADClientId);
+    console.log(`Validate AAD [objectId]: ${config?.objectId}`);
+    console.log(`Validate AAD [apimClientAADClientId] : ${config?.apimClientAADClientId}`);
 
     const aadResponse = await this.axiosInstance?.get(`/applications/${config?.objectId}`);
     const knownClientApplications = aadResponse?.data?.api?.knownClientApplications as string[];
-    chai.assert.isNotEmpty(knownClientApplications);
+    chai.assert.isNotEmpty(knownClientApplications, JSON.stringify(aadResponse?.data));
     chai.assert.include(knownClientApplications, config?.apimClientAADClientId);
 
     chai.assert.isNotEmpty(config?.clientId);
