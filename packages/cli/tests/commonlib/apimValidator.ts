@@ -282,7 +282,7 @@ export class ApimValidator {
         `/servicePrincipals?$filter=appId eq '${config?.clientId}'`
       );
       servicePrincipals = servicePrincipalResponse?.data?.value as any[];
-      if (!servicePrincipals && servicePrincipals.length > 0) {
+      if (!servicePrincipals && servicePrincipals?.length > 0) {
         break;
       }
       console.log(`ServicePrincipals Response: ${JSON.stringify(servicePrincipalResponse?.data)}`);
