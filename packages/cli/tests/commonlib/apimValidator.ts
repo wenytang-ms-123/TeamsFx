@@ -13,6 +13,7 @@ export class ApimValidator {
   static apimClient?: ApiManagementClient;
   static resourceGroupClient?: ResourceManagementClient;
   static axiosInstance?: AxiosInstance;
+  static maxRetryTimes = 5;
 
   public static async init(
     subscriptionId: string,
@@ -234,7 +235,7 @@ export class ApimValidator {
   private static async validateClientAad(config: Config): Promise<any> {
     chai.assert.isNotEmpty(config?.apimClientAADObjectId);
     let response = undefined;
-    for (let i = 0; i < 3; ++i) {
+    for (let i = 0; i < this.maxRetryTimes; ++i) {
       response = await this.axiosInstance?.get(`/applications/${config?.apimClientAADObjectId}`);
 
       const enableIdTokenIssuance =
@@ -285,7 +286,7 @@ export class ApimValidator {
     console.log(`Validate AAD [apimClientAADObjectId] : ${config?.apimClientAADObjectId}`);
 
     let aadResponse = undefined;
-    for (let i = 0; i < 3; ++i) {
+    for (let i = 0; i < this.maxRetryTimes; ++i) {
       aadResponse = await this.axiosInstance?.get(`/applications/${config?.objectId}`);
       const knownClientApplications = aadResponse?.data?.api?.knownClientApplications as string[];
       if (knownClientApplications && knownClientApplications?.length > 0) {
@@ -301,7 +302,7 @@ export class ApimValidator {
     chai.assert.isNotEmpty(config?.clientId);
 
     let servicePrincipals: any[] = [];
-    for (let i = 0; i < 3; ++i) {
+    for (let i = 0; i < this.maxRetryTimes; ++i) {
       const servicePrincipalResponse = await this.axiosInstance?.get(
         `/servicePrincipals?$filter=appId eq '${config?.clientId}'`
       );
