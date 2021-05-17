@@ -26,48 +26,54 @@ describe("Create a new API Management Service", function () {
 
   it(`Import API into a new API Management Service`, async function () {
     // new a project
-    await execAsync(
-      `teamsfx new --app-name ${appName} --interactive false`,
-      {
-        cwd: testFolder,
-        env: process.env,
-        timeout: 0
-      }
+    let result = await execAsync(`teamsfx new --app-name ${appName} --interactive false`, {
+      cwd: testFolder,
+      env: process.env,
+      timeout: 0,
+    });
+    console.log(
+      !result.stderr
+        ? "[Successfully] Create project"
+        : `[Warning] Create project: ${result.stderr}`
     );
 
     await setSimpleAuthSkuNameToB1(projectPath);
 
     await ApimValidator.init(subscriptionId, AzureLogin, GraphLogin);
 
-    await execAsync(
-      `teamsfx resource add azure-apim --subscription ${subscriptionId}`,
-      {
-        cwd: projectPath,
-        env: process.env,
-        timeout: 0
-      }
+    result = await execAsync(`teamsfx resource add azure-apim --subscription ${subscriptionId}`, {
+      cwd: projectPath,
+      env: process.env,
+      timeout: 0,
+    });
+    console.log(
+      !result.stderr
+        ? "[Successfully] Add apim resource"
+        : `[Warning] Add apim resource: ${result.stderr}`
     );
 
-    await execAsync(
-      `teamsfx provision`,
-      {
-        cwd: projectPath,
-        env: process.env,
-        timeout: 0
-      }
+    result = await execAsync(`teamsfx provision`, {
+      cwd: projectPath,
+      env: process.env,
+      timeout: 0,
+    });
+
+    console.log(
+      !result.stderr ? "[Successfully] Provision" : `[Warning] Provision: ${result.stderr}`
     );
 
     const provisionContext = await fs.readJSON(getConfigFileName(appName));
     await ApimValidator.validateProvision(provisionContext, appName);
 
-    await execAsync(
+    result = await execAsync(
       `teamsfx deploy apim --open-api-document openapi/openapi.json --api-prefix ${appName} --api-version v1`,
       {
         cwd: projectPath,
         env: process.env,
-        timeout: 0
+        timeout: 0,
       }
     );
+    console.log(!result.stderr ? "[Successfully] Deploy" : `[Warning] Deploy: ${result.stderr}`);
 
     const deployContext = await fs.readJSON(getConfigFileName(appName));
     await ApimValidator.validateDeploy(deployContext, projectPath, appName, "v1");
