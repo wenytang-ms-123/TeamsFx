@@ -7,7 +7,6 @@ import { ApiManagementClient } from "@azure/arm-apimanagement";
 import fs from "fs-extra";
 import md5 from "md5";
 import { ResourceManagementClient } from "@azure/arm-resources";
-
 import { AzureAccountProvider, GraphTokenProvider } from "@microsoft/teamsfx-api";
 
 export class ApimValidator {
@@ -243,10 +242,10 @@ export class ApimValidator {
       const passwordCredentials = response?.data?.passwordCredentials as any[];
       const requiredResourceAccess = response?.data?.requiredResourceAccess as any[];
       if (
-        !enableIdTokenIssuance &&
-        !passwordCredentials &&
+        enableIdTokenIssuance &&
+        passwordCredentials &&
         passwordCredentials?.length > 0 &&
-        !requiredResourceAccess &&
+        requiredResourceAccess &&
         requiredResourceAccess?.length > 0
       ) {
         break;
@@ -289,7 +288,7 @@ export class ApimValidator {
     for (let i = 0; i < 3; ++i) {
       aadResponse = await this.axiosInstance?.get(`/applications/${config?.objectId}`);
       const knownClientApplications = aadResponse?.data?.api?.knownClientApplications as string[];
-      if (!knownClientApplications && knownClientApplications?.length > 0) {
+      if (knownClientApplications && knownClientApplications?.length > 0) {
         break;
       }
       await delay(i * 1000 + 1000);
@@ -307,7 +306,7 @@ export class ApimValidator {
         `/servicePrincipals?$filter=appId eq '${config?.clientId}'`
       );
       servicePrincipals = servicePrincipalResponse?.data?.value as any[];
-      if (!!servicePrincipals && servicePrincipals?.length > 0) {
+      if (servicePrincipals && servicePrincipals?.length > 0) {
         break;
       }
       console.log(`ServicePrincipals Response: ${JSON.stringify(servicePrincipalResponse?.data)}`);
