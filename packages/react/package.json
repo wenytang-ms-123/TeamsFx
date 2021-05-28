@@ -27,7 +27,8 @@
     "@types/react": "^17.0.4"
   },
   "dependencies": {
-    "@microsoft/teamsfx": "^0.0.6-alpha.1",
+    "@microsoft/teams-js": "^1.10.0",
+    "@microsoft/teamsfx": "^0.1.1",
     "react": "^16.13.1"
   },
   "lint-staged": {

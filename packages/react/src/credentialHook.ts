@@ -8,16 +8,21 @@ import {
 } from "@microsoft/teamsfx";
 import { getCredential } from "./credential";
 
-type CredentialHandler = (credential: TeamsUserCredential) => Promise<any>;
+type CredentialHandler<T> = (credential: TeamsUserCredential) => Promise<T>;
 
-interface TeamsFxState<T> {
+/**
+ * Interface of returned data from useTeamsFx.
+ * 
+ * @beta
+ */
+export interface TeamsFxCredential<T> extends TeamsCredentialState<T> {
     /**
      * User need to login and consent if it's true.
      */
     requirePermission: boolean;
     /**
      * The instance of TeamsUserCredential
-     */
+    */
     credential?: TeamsUserCredential;
     /**
      * Data returned from custom handler.
@@ -27,19 +32,13 @@ interface TeamsFxState<T> {
      * Error instance.
      */
     error?: Error;
-}
-
-/**
- * Interface of returned data from useTeamsFx.
- * 
- * @beta
- */
-export interface TeamsFxData<T> extends TeamsFxState<T> {
     /**
      * Call this function if error code is 'ErrorCode.UiRequiredError'
      */
     login: () => Promise<void>;
 }
+
+type TeamsCredentialState<T> = Pick<TeamsFxCredential<T>, "requirePermission" | "credential" | "data" | "error">
 
 type Action<T> =
     | { type: 'login success' }
@@ -57,8 +56,8 @@ type Action<T> =
  * 
  * @beta
  */
-export function useTeamsFx<T>(handler: CredentialHandler, scopes: string[] = [".default"]): TeamsFxData<T> {
-    const reducer = (state: TeamsFxState<T>, action: Action<T>): TeamsFxState<T> => {
+export function useTeamsFxCredential<T>(handler: CredentialHandler<T>, scopes: string[] = [".default"]): TeamsFxCredential<T> {
+    const reducer = (state: TeamsCredentialState<T>, action: Action<T>): TeamsCredentialState<T> => {
         switch (action.type) {
             case 'login success':
                 return { requirePermission: false, credential: state.credential, data: state.data, error: undefined };
@@ -75,7 +74,7 @@ export function useTeamsFx<T>(handler: CredentialHandler, scopes: string[] = [".
         }
     }
 
-    const teamsUserCredential = getCredential(scopes);
+    const teamsUserCredential = getCredential();
     const [{requirePermission, credential, data, error}, dispatch] = useReducer(
         reducer,
         { requirePermission: false, credential: teamsUserCredential, data: undefined, error: undefined }

@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import React, { useContext } from "react";
+import * as microsoftTeams from "@microsoft/teams-js";
 import {
     TeamsUserCredential,
 } from "@microsoft/teamsfx";
@@ -9,17 +10,18 @@ import {
 /**
  * Interface of React context containing TeamsFx credential information.
  */
-export interface TeamsFxContext {
+export interface TeamsContextWithAuth {
+    teamsContext?: microsoftTeams.Context;
     credential?: TeamsUserCredential;
     scopes: string[];
 }
 
 /**
- * Default instance of TeamsFxContext.
+ * Default instance of TeamsContextWithAuth.
  * 
  * @internal
  */
-export const defaultTeamsFxCtx: TeamsFxContext = {
+const defaultTeamsCtxWithAuth: TeamsContextWithAuth = {
     scopes: [".default"]
 }
 
@@ -28,12 +30,12 @@ export const defaultTeamsFxCtx: TeamsFxContext = {
  * 
  * @beta
  */
-export const TeamsFxCtx = React.createContext<TeamsFxContext>(defaultTeamsFxCtx);
+export const TeamsFxContext = React.createContext<TeamsContextWithAuth>(defaultTeamsCtxWithAuth);
 
 /**
  * React hook that provides access to the TeamsFx React context.
- * @returns TeamsFxContext
+ * @returns TeamsContextWithAuth
  * 
  * @beta
  */
-export const useTeamsFxContext = () => useContext(TeamsFxCtx);
+export const useTeamsContextWithAuth = () => useContext(TeamsFxContext);

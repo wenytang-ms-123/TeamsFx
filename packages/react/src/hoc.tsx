@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import React from "react";
-import { TeamsFxCtx, TeamsFxContext, defaultTeamsFxCtx } from "./teamsfxContext";
+import React, { useState, useEffect } from "react";
+import { TeamsFxContext, TeamsContextWithAuth } from "./context";
 import { getCredential } from "./credential";
 
 /**
@@ -14,43 +14,28 @@ import { getCredential } from "./credential";
  * 
  * @beta
  */
-export function withTeamsFxContext(WrappedComponent: React.ComponentType, scopes: string[] = [".default"]): () => JSX.Element {
-    const credential = getCredential(scopes);
-    credential.login(scopes);
-    const teamsFxCtx: TeamsFxContext = {
-        credential: credential,
-        scopes: scopes
-    };
+export function withContext(WrappedComponent: React.ComponentType, autoLoginUser: boolean = true, scopes: string[] = [".default"]): () => JSX.Element {
+    const credential = getCredential();
+    if (autoLoginUser) {
+      credential.login(scopes);
+    }
+    const [teamsFxCtx, setTeamsFxCtx] = useState<TeamsContextWithAuth>({scopes: scopes});
+
+    useEffect(() => {
+      microsoftTeams.initialize(() => {
+        microsoftTeams.getContext(context => {
+            setTeamsFxCtx({
+              teamsContext: context,
+              credential: credential,
+              scopes: scopes
+            })
+        });
+      });
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
     return () => (
-      <TeamsFxCtx.Provider value={teamsFxCtx}>
+      <TeamsFxContext.Provider value={teamsFxCtx}>
         <WrappedComponent></WrappedComponent>
-      </TeamsFxCtx.Provider>
-    );    
-}
-
-interface WithScopesProps {
-  scopes: string[];
-  children: React.ReactNode;
-}
-
-/**
- * A React provider component with pre-configured value.
- * 
- * @param props - React component props.
- * @returns Wrapped JSX element to render.
- * 
- * @beta
- */
-export const TeamsFxProvider = (props: WithScopesProps) => {
-  const credential = getCredential(props.scopes);
-  credential.login(props.scopes);
-  const teamsFxCtx: TeamsFxContext = {
-    credential: credential,
-    ...defaultTeamsFxCtx
-  }
-  return (
-    <TeamsFxCtx.Provider value={teamsFxCtx}>
-      {props.children}
-    </TeamsFxCtx.Provider>
-  )
+      </TeamsFxContext.Provider>
+    );
 }
