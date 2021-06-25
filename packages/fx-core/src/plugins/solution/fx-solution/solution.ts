@@ -1654,6 +1654,28 @@ export class TeamsAppSolution implements Solution {
   }
 
   async localDebug(ctx: SolutionContext): Promise<Result<any, FxError>> {
+    // if this is spfx project, get local teams app id and then return
+    if (!this.isAzureProject(ctx)) {
+      const maybeManifest = await this.reloadManifestAndCheckRequiredFields(ctx);
+      if (maybeManifest.isErr()) {
+        return err(maybeManifest.error);
+      }
+      const manifest = maybeManifest.value;
+      const componentID = manifest.id;
+      if (manifest.configurableTabs) {
+        for (const tab of manifest.configurableTabs) {
+          tab.configurationUrl = `https://{teamSiteDomain}{teamSitePath}/_layouts/15/TeamsLogon.aspx?SPFX=true&dest={teamSitePath}/_layouts/15/TeamsWorkBench.aspx%3FcomponentId=${componentID}%26openPropertyPane=true%26teams%26forceLocale={locale}%26loadSPFX%3Dtrue%26debugManifestsFile%3Dhttps%3A%2F%2Flocalhost%3A4321%2Ftemp%2Fmanifests.js`
+        }
+      }
+      if (manifest.staticTabs) {
+        for (const tab of manifest.staticTabs) {
+          tab.contentUrl = `https://{teamSiteDomain}/_layouts/15/TeamsLogon.aspx?SPFX=true&dest={teamSitePath}/_layouts/15/TeamsWorkBench.aspx%3FcomponentId=${componentID}%26teams%26personal%26forceLocale={locale}%26loadSPFX%3Dtrue%26debugManifestsFile%3Dhttps%3A%2F%2Flocalhost%3A4321%2Ftemp%2Fmanifests.js`
+        }
+      }
+      const appDefinition: IAppDefinition = AppStudio.convertToAppDefinition(manifest, false);
+      const result = await  this.setLocalTeamsAPPIDForSPFx(ctx, appDefinition);
+      return result;
+    }
     const maybePermission = await this.getPermissionRequest(ctx);
     if (maybePermission.isErr()) {
       return maybePermission;
@@ -1665,6 +1687,44 @@ export class TeamsAppSolution implements Solution {
     } finally {
       ctx.config.get(GLOBAL_CONFIG)?.delete(PERMISSION_REQUEST);
     }
+  }
+
+  private async setLocalTeamsAPPIDForSPFx(ctx: SolutionContext, appDefinition: IAppDefinition): Promise<Result<any, FxError>> {
+    const result = this.loadTeamsAppTenantId(ctx.config, await ctx.appStudioToken?.getJsonObject());
+
+    if (result.isErr()) {
+      return result;
+    }
+
+    const localTeamsAppID = ctx.config.get(GLOBAL_CONFIG)?.getString(LOCAL_DEBUG_TEAMS_APP_ID);
+
+    // If localTeamsAppID is present, we should reuse the teams app id.
+    if (localTeamsAppID) {
+      const result = await this.updateApp(
+        localTeamsAppID,
+        appDefinition,
+        "localDebug",
+        ctx.logProvider,
+        await ctx.appStudioToken?.getAccessToken(),
+        ctx.root
+      );
+      if (result.isErr()) {
+        return result;
+      }
+    } else {
+      const maybeTeamsAppId = await this.createAndUpdateApp(
+        appDefinition,
+        "localDebug",
+        ctx.logProvider,
+        await ctx.appStudioToken?.getAccessToken(),
+        ctx.root
+      );
+      if (maybeTeamsAppId.isErr()) {
+        return maybeTeamsAppId;
+      }
+      ctx.config.get(GLOBAL_CONFIG)?.set(LOCAL_DEBUG_TEAMS_APP_ID, maybeTeamsAppId.value);
+    }
+    return ok(Void);
   }
 
   async doLocalDebug(ctx: SolutionContext): Promise<Result<any, FxError>> {
