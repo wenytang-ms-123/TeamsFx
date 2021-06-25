@@ -16,8 +16,9 @@ import * as StringResources from "./resources/Strings.json";
 import { openWelcomePageAfterExtensionInstallation } from "./controls/openWelcomePage";
 import { VsCodeUI } from "./qm/vsc_ui";
 import { exp } from "./exp";
+import { CodelensProvider } from "./codelensProvider";
 
-export let VS_CODE_UI:VsCodeUI;
+export let VS_CODE_UI: VsCodeUI;
 
 export async function activate(context: vscode.ExtensionContext) {
   VsCodeLogInstance.info(StringResources.vsc.extension.activate);
@@ -78,7 +79,7 @@ export async function activate(context: vscode.ExtensionContext) {
     handlers.publishHandler
   );
   context.subscriptions.push(publishCmd);
- 
+
   // 1.7 validate dependencies command (hide from UI)
   const validateDependenciesCmd = vscode.commands.registerCommand(
     "fx-extension.validate-dependencies",
@@ -105,12 +106,6 @@ export async function activate(context: vscode.ExtensionContext) {
     handlers.backendExtensionsInstallHandler
   );
   context.subscriptions.push(backendExtensionsInstallCmd);
-
-  // 1.10 Register teamsfx task provider
-  const taskProvider: TeamsfxTaskProvider = new TeamsfxTaskProvider();
-  context.subscriptions.push(
-    vscode.tasks.registerTaskProvider(TeamsfxTaskProvider.type, taskProvider)
-  );
 
   const openWelcomeCmd = vscode.commands.registerCommand(
     "fx-extension.openWelcome",
@@ -172,6 +167,35 @@ export async function activate(context: vscode.ExtensionContext) {
   );
   context.subscriptions.push(cmpAccountsCmd);
 
+  const decryptCmd = vscode.commands.registerCommand(
+    "fx-extension.decryptSecret",
+    handlers.decryptSecret
+  );
+  context.subscriptions.push(decryptCmd);
+
+  const codelensProvider = new CodelensProvider();
+
+  // Get a document selector for the CodeLens provider
+  // This one is any file that has the language of javascript
+  const userDataSelector = {
+    language: "plaintext",
+    scheme: "file",
+    pattern: "**/.fx/*.userdata",
+  };
+
+  const localEnvSelector = {
+    language: "dotenv",
+    scheme: "file",
+    pattern: "**/.fx/local.env",
+  };
+
+  context.subscriptions.push(
+    vscode.languages.registerCodeLensProvider(userDataSelector, codelensProvider)
+  );
+  context.subscriptions.push(
+    vscode.languages.registerCodeLensProvider(localEnvSelector, codelensProvider)
+  );
+
   // Register debug configuration provider
   const debugProvider: TeamsfxDebugProvider = new TeamsfxDebugProvider();
   context.subscriptions.push(
@@ -193,6 +217,12 @@ export async function activate(context: vscode.ExtensionContext) {
   await handlers.cmdHdlLoadTreeView(context);
   // 2. Call activate function of toolkit core.
   await handlers.activate();
+
+  // 1.10 Register teamsfx task provider
+  const taskProvider: TeamsfxTaskProvider = new TeamsfxTaskProvider(handlers.core);
+  context.subscriptions.push(
+    vscode.tasks.registerTaskProvider(TeamsfxTaskProvider.type, taskProvider)
+  );
 
   const survey = new ExtensionSurvey(context);
   survey.activate();

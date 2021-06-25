@@ -5,7 +5,7 @@ import * as vscode from "vscode";
 
 import * as constants from "./constants";
 import * as commonUtils from "./commonUtils";
-import { ProductName, VsCodeEnv } from "@microsoft/teamsfx-api";
+import { Core, ProductName, VsCodeEnv } from "@microsoft/teamsfx-api";
 import { DotnetChecker } from "./depsChecker/dotnetChecker";
 import { detectVsCodeEnv } from "../handlers";
 import { vscodeAdapter } from "./depsChecker/vscodeAdapter";
@@ -14,6 +14,12 @@ import { vscodeTelemetry } from "./depsChecker/vscodeTelemetry";
 
 export class TeamsfxTaskProvider implements vscode.TaskProvider {
   public static readonly type: string = ProductName;
+
+  private readonly core: Core;
+
+  constructor(core: Core) {
+    this.core = core;
+  }
 
   public async provideTasks(token?: vscode.CancellationToken | undefined): Promise<vscode.Task[]> {
     const tasks: vscode.Task[] = [];
@@ -89,7 +95,7 @@ export class TeamsfxTaskProvider implements vscode.TaskProvider {
     const command: string = constants.frontendStartCommand;
     definition = definition || { type: TeamsfxTaskProvider.type, command };
     const commandLine = "npx react-scripts start";
-    const env = await commonUtils.getFrontendLocalEnv();
+    const env = await commonUtils.getFrontendLocalEnv(this.core);
     const options: vscode.ShellExecutionOptions = {
       cwd: projectRoot,
       env,
@@ -121,7 +127,7 @@ export class TeamsfxTaskProvider implements vscode.TaskProvider {
       programmingLanguage === constants.ProgrammingLanguage.typescript
         ? 'npx func start --typescript --language-worker="--inspect=9229" --port "7071" --cors "*"'
         : 'npx func start --javascript --language-worker="--inspect=9229" --port "7071" --cors "*"';
-    const env = await commonUtils.getBackendLocalEnv();
+    const env = await commonUtils.getBackendLocalEnv(this.core);
     const options: vscode.ShellExecutionOptions = {
       cwd: projectRoot,
       env,
@@ -151,7 +157,7 @@ export class TeamsfxTaskProvider implements vscode.TaskProvider {
     const dotnetChecker = new DotnetChecker(vscodeAdapter, vscodeLogger, vscodeTelemetry);
     const dotnetPath = await dotnetChecker.getDotnetExecPath();
 
-    const env = await commonUtils.getAuthLocalEnv();
+    const env = await commonUtils.getAuthLocalEnv(this.core);
     const options: vscode.ShellExecutionOptions = {
       cwd: projectRoot,
       env,
@@ -211,7 +217,7 @@ export class TeamsfxTaskProvider implements vscode.TaskProvider {
       programmingLanguage === constants.ProgrammingLanguage.typescript
         ? "npx nodemon --exec node --inspect=9239 --signal SIGINT -r ts-node/register index.ts"
         : "npx nodemon --inspect=9239 --signal SIGINT index.js";
-    const env = await commonUtils.getBotLocalEnv();
+    const env = await commonUtils.getBotLocalEnv(this.core);
     const options: vscode.ShellExecutionOptions = {
       cwd: projectRoot,
       env,

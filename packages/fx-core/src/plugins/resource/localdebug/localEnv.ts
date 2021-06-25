@@ -5,7 +5,7 @@
 import * as dotenv from "dotenv";
 import * as fs from "fs-extra";
 import * as os from "os";
-import { ConfigFolderName } from "@microsoft/teamsfx-api";
+import { ConfigFolderName, EncryptionProvider } from "@microsoft/teamsfx-api";
 
 import {
   LocalEnvFrontendKeys,
@@ -16,8 +16,18 @@ import {
 
 export class LocalEnvProvider {
   private readonly localEnvFilePath: string;
-  constructor(workspaceFolder: string) {
+  private readonly encryptionProvider: EncryptionProvider;
+
+  private readonly secretEnvKeys = new Set([
+    LocalEnvAuthKeys.ClientSecret,
+    LocalEnvBackendKeys.ClientSecret,
+    LocalEnvBotKeys.BotPassword,
+    LocalEnvBotKeys.ClientSecret,
+  ]);
+
+  constructor(workspaceFolder: string, encryptionProvider: EncryptionProvider) {
     this.localEnvFilePath = `${workspaceFolder}/.${ConfigFolderName}/local.env`;
+    this.encryptionProvider = encryptionProvider;
   }
 
   public async loadLocalEnv(
@@ -38,7 +48,11 @@ export class LocalEnvProvider {
     if (envs) {
       const entries = Object.entries(envs);
       for (const [key, value] of entries) {
-        await fs.appendFile(this.localEnvFilePath, `${key}=${value}${os.EOL}`);
+        let envValue = value;
+        if (this.secretEnvKeys.has(key)) {
+          envValue = this.encryptionProvider.encrypt(value);
+        }
+        await fs.appendFile(this.localEnvFilePath, `${key}=${envValue}${os.EOL}`);
       }
     }
   }

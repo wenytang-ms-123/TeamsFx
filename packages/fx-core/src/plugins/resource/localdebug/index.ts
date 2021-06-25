@@ -130,7 +130,7 @@ export class LocalDebugPlugin implements Plugin {
           programmingLanguage
         );
 
-        const localEnvProvider = new LocalEnvProvider(ctx.root);
+        const localEnvProvider = new LocalEnvProvider(ctx.root, ctx.encryptionProvider!);
 
         //TODO: save files via context api
         await fs.ensureDir(`${ctx.root}/.vscode/`);
@@ -290,9 +290,7 @@ export class LocalDebugPlugin implements Plugin {
       (pluginName) => pluginName === FunctionPlugin.Name
     );
     const includeBot = selectedPlugins?.some((pluginName) => pluginName === BotPlugin.Name);
-    let trustDevCert = ctx.config?.get(
-      LocalDebugConfigKeys.TrustDevelopmentCertificate
-    ) as string;
+    let trustDevCert = ctx.config?.get(LocalDebugConfigKeys.TrustDevelopmentCertificate) as string;
 
     const telemetryProperties = {
       platform: ctx.answers?.platform as string,
@@ -305,7 +303,7 @@ export class LocalDebugPlugin implements Plugin {
     TelemetryUtils.sendStartEvent(TelemetryEventName.postLocalDebug, telemetryProperties);
 
     if (ctx.answers?.platform === Platform.VSCode) {
-      const localEnvProvider = new LocalEnvProvider(ctx.root);
+      const localEnvProvider = new LocalEnvProvider(ctx.root, ctx.encryptionProvider!);
       const localEnvs = await localEnvProvider.loadLocalEnv(
         includeFrontend,
         includeBackend,

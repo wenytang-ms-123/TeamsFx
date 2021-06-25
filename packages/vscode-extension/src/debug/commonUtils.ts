@@ -6,7 +6,7 @@ import * as path from "path";
 import * as dotenv from "dotenv";
 import * as vscode from "vscode";
 import * as constants from "./constants";
-import { ConfigFolderName, Func } from "@microsoft/teamsfx-api";
+import { Core, ConfigFolderName, Func } from "@microsoft/teamsfx-api";
 import { core, getSystemInputs, showError } from "../handlers";
 import * as net from "net";
 import { ext } from "../extensionVariables";
@@ -50,17 +50,50 @@ async function getLocalEnv(prefix = ""): Promise<{ [key: string]: string } | und
   return Object.keys(result).length > 0 ? result : undefined;
 }
 
-export async function getFrontendLocalEnv(): Promise<{ [key: string]: string } | undefined> {
-  return getLocalEnv(constants.frontendLocalEnvPrefix);
+const secretEnvKeys = new Set([
+  "AUTH_CLIENT_SECRET",
+  "BACKEND_M365_CLIENT_SECRET",
+  "BOT_BOT_PASSWORD",
+  "BOT_M365_CLIENT_SECRET",
+]);
+
+async function decryptSecrets(
+  envs: { [key: string]: string } | undefined,
+  core: Core
+): Promise<{ [key: string]: string } | undefined> {
+  if (envs) {
+    const inputs = getSystemInputs();
+    const entries = Object.entries(envs);
+    for (const [key, value] of entries) {
+      if (secretEnvKeys.has(key)) {
+        const result = await core.decrypt(value, inputs);
+        if (result.isOk()) {
+          envs[key] = result.value;
+        }
+      }
+    }
+  }
+  return envs;
 }
 
-export async function getBackendLocalEnv(): Promise<{ [key: string]: string } | undefined> {
-  return getLocalEnv(constants.backendLocalEnvPrefix);
+export async function getFrontendLocalEnv(
+  core: Core
+): Promise<{ [key: string]: string } | undefined> {
+  const envs = await getLocalEnv(constants.frontendLocalEnvPrefix);
+  return decryptSecrets(envs, core);
 }
 
-export async function getAuthLocalEnv(): Promise<{ [key: string]: string } | undefined> {
+export async function getBackendLocalEnv(
+  core: Core
+): Promise<{ [key: string]: string } | undefined> {
+  const envs = await getLocalEnv(constants.backendLocalEnvPrefix);
+  return decryptSecrets(envs, core);
+}
+
+export async function getAuthLocalEnv(core: Core): Promise<{ [key: string]: string } | undefined> {
   // SERVICE_PATH will also be included, but it has no side effect
-  return getLocalEnv(constants.authLocalEnvPrefix);
+  const envs = await getLocalEnv(constants.authLocalEnvPrefix);
+  return decryptSecrets(envs, core);
 }
 
 export async function getAuthServicePath(): Promise<string | undefined> {
@@ -68,8 +101,9 @@ export async function getAuthServicePath(): Promise<string | undefined> {
   return result ? result[constants.authServicePathEnvKey] : undefined;
 }
 
-export async function getBotLocalEnv(): Promise<{ [key: string]: string } | undefined> {
-  return getLocalEnv(constants.botLocalEnvPrefix);
+export async function getBotLocalEnv(core: Core): Promise<{ [key: string]: string } | undefined> {
+  const envs = await getLocalEnv(constants.botLocalEnvPrefix);
+  return decryptSecrets(envs, core);
 }
 
 export async function isFxProject(folderPath: string): Promise<boolean> {
@@ -98,7 +132,7 @@ export async function getLocalDebugTeamsAppId(
   const func: Func = {
     namespace: "fx-solution-azure/fx-resource-local-debug",
     method: "getLaunchInput",
-    params: isLocalSideloadingConfiguration ? "local" : "remote"
+    params: isLocalSideloadingConfiguration ? "local" : "remote",
   };
   try {
     const inputs = getSystemInputs();
