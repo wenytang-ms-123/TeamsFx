@@ -813,16 +813,19 @@ export async function decryptSecret(cipher: string, selection: vscode.Range) {
   const result = await core.decrypt(cipher, inputs);
   if (editor && result.isOk()) {
     window.showInformationMessage(`decrypted: ${result.value}`);
-    const newValue = await VS_CODE_UI.inputText({
+    const newSecret = await VS_CODE_UI.inputText({
       name: "Secret Editor",
       title: "Edit the secret value",
       default: result.value,
     });
-    if (newValue.isOk()) {
-      window.showInformationMessage(`updated to: ${newValue.value.result}`);
-      editor.edit((editBuilder) => {
-        editBuilder.replace(selection, newValue.value.result!);
-      });
+    if (newSecret.isOk() && newSecret.value.result) {
+      window.showInformationMessage(`updated to: ${newSecret.value.result}`);
+      const newValue = await core.encrypt(newSecret.value.result, inputs);
+      if (newValue.isOk()) {
+        editor.edit((editBuilder) => {
+          editBuilder.replace(selection, newValue.value);
+        });
+      }
     }
   }
   return null;

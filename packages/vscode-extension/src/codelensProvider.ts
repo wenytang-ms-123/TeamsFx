@@ -10,7 +10,7 @@ export class CodelensProvider implements vscode.CodeLensProvider {
 
   constructor() {
     this.userDataRegex = /fx-resource-[a-zA-Z\-]+\.[a-zA-Z\-_]+=(.*)/g;
-    this.envRegex = /.+SECRET=(.*)/g;
+    this.envRegex = /.+(?:SECRET|PASSWORD)=(.*)/g;
   }
 
   public provideCodeLenses(

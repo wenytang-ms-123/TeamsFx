@@ -2,19 +2,25 @@
 // Licensed under the MIT license.
 
 import { EncryptionProvider } from "@microsoft/teamsfx-api";
+import Cryptr from "cryptr";
 
 export class Encryption implements EncryptionProvider {
-  private key: string;
+  private cryptr: Cryptr;
 
   constructor(projectId: string) {
-    this.key = projectId + "_teamsfx";
+    this.cryptr = new Cryptr(projectId + "_teamsfx");
   }
 
   public encrypt(secret: string): string {
-    return secret + "!!!";
+    return this.cryptr.encrypt(secret);
   }
 
   public decrypt(cipher: string): string {
-    return cipher.substr(0, cipher.length - 3);
+    try {
+      return this.cryptr.decrypt(cipher);
+    } catch (e) {
+      // legacy raw secret string
+      return cipher;
+    }
   }
 }
