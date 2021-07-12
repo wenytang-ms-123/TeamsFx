@@ -103,6 +103,7 @@ import { Service, Container } from "typedi";
 import { deployArmTemplates, generateArmTemplate } from "./arm";
 import { LocalSettingsProvider } from "../../../common/localSettingsProvider";
 import { PluginDisplayName } from "../../../common/constants";
+import { Plugin } from "@microsoft/teamsfx-api";
 
 export type LoadedPlugin = Plugin;
 export type PluginsWithContext = [LoadedPlugin, PluginContext];
@@ -133,6 +134,7 @@ export class TeamsAppSolution implements Solution {
   SqlPlugin: Plugin;
   ApimPlugin: Plugin;
   LocalDebugPlugin: Plugin;
+  CICDPlugin: Plugin;
 
   name = "fx-solution-azure";
 
@@ -148,6 +150,7 @@ export class TeamsAppSolution implements Solution {
     this.SqlPlugin = Container.get<Plugin>(ResourcePlugins.SqlPlugin);
     this.ApimPlugin = Container.get<Plugin>(ResourcePlugins.ApimPlugin);
     this.LocalDebugPlugin = Container.get<Plugin>(ResourcePlugins.LocalDebugPlugin);
+    this.CICDPlugin = Container.get<Plugin>(ResourcePlugins.CICDPlugin);
     this.runningState = SolutionRunningState.Idle;
   }
 
