@@ -20,7 +20,7 @@ const funcPackageName = "azure-functions-core-tools";
 const funcToolName = "Azure Function Core Tool";
 
 const installVersion = FuncVersion.v3;
-const supportedVersions = [FuncVersion.v2, FuncVersion.v3];
+const supportedVersions = [FuncVersion.v3];
 const displayFuncName = `${funcToolName} (v${FuncVersion.v3})`;
 
 const timeout = 5 * 60 * 1000;
@@ -146,7 +146,7 @@ export class FuncToolChecker implements IDepsChecker {
   }
 
   private static getDefaultInstallPath(): string {
-    return path.join(os.homedir(), `.${ConfigFolderName}`, "bin", "func test"); // TODO: fix it after testing
+    return path.join(os.homedir(), `.${ConfigFolderName}`, "bin", "func");
   }
 
   private static getPortableFuncExecPath(): string {

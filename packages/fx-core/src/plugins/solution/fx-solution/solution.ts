@@ -808,8 +808,9 @@ export class TeamsAppSolution implements Solution {
       );
     }
 
-    const maybeManifestTpl = await (this
-      .AppStudioPlugin as AppStudioPlugin).reloadManifestAndCheckRequiredFields(ctx.root);
+    const maybeManifestTpl = await (
+      this.AppStudioPlugin as AppStudioPlugin
+    ).reloadManifestAndCheckRequiredFields(ctx.root);
     if (maybeManifestTpl.isErr()) {
       return err(maybeManifestTpl.error);
     }
@@ -914,8 +915,9 @@ export class TeamsAppSolution implements Solution {
       const checkRes = this.checkWhetherSolutionIsIdle();
       if (checkRes.isErr()) return err(checkRes.error);
 
-      const maybeManifest = await (this
-        .AppStudioPlugin as AppStudioPlugin).reloadManifestAndCheckRequiredFields(ctx.root);
+      const maybeManifest = await (
+        this.AppStudioPlugin as AppStudioPlugin
+      ).reloadManifestAndCheckRequiredFields(ctx.root);
       if (maybeManifest.isErr()) {
         return err(maybeManifest.error);
       }
@@ -1141,8 +1143,9 @@ export class TeamsAppSolution implements Solution {
 
     const selectedPlugins = maybeSelectedPlugins.value;
 
-    const maybeManifest = await (this
-      .AppStudioPlugin as AppStudioPlugin).reloadManifestAndCheckRequiredFields(ctx.root);
+    const maybeManifest = await (
+      this.AppStudioPlugin as AppStudioPlugin
+    ).reloadManifestAndCheckRequiredFields(ctx.root);
     if (maybeManifest.isErr()) {
       return err(maybeManifest.error);
     }
@@ -1192,90 +1195,21 @@ export class TeamsAppSolution implements Solution {
       return postLocalDebugResult;
     }
 
-    const maybeConfig = this.AppStudioPlugin.getConfigForCreatingManifest(
-      getPluginContext(ctx, this.AppStudioPlugin.name, manifest),
-      true
-    ).map((conf) => {
-      return {
-        localTabEndpoint: conf.tabEndpoint,
-        localTabDomain: conf.tabDomain,
-        localAADId: conf.aadId,
-        localBotDomain: conf.botDomain,
-        botId: conf.botId,
-        webApplicationInfoResource: conf.webApplicationInfoResource,
-      };
-    });
-
-    if (maybeConfig.isErr()) {
-      return maybeConfig;
-    }
-
-    const {
-      localTabEndpoint,
-      localTabDomain,
-      localAADId,
-      localBotDomain,
-      botId,
-      webApplicationInfoResource,
-    } = maybeConfig.value;
-
-    const validDomains: string[] = [];
-
-    if (localTabDomain) {
-      validDomains.push(localTabDomain);
-    }
-
-    if (localBotDomain) {
-      validDomains.push(localBotDomain);
-    }
-
-    const manifestTpl = (
-      await fs.readFile(`${ctx.root}/.${ConfigFolderName}/${REMOTE_MANIFEST}`)
-    ).toString();
-
-    const [appDefinition, _updatedManifest] = this.AppStudioPlugin.getDevAppDefinition(
-      manifestTpl,
-      localAADId,
-      validDomains,
-      webApplicationInfoResource,
-      false,
-      localTabEndpoint,
-      manifest.name.short,
-      manifest.version,
-      botId,
-      "-local-debug"
-    );
-
     const localTeamsAppID = ctx.config.get(GLOBAL_CONFIG)?.getString(LOCAL_DEBUG_TEAMS_APP_ID);
-    // If localTeamsAppID is present, we should reuse the teams app id.
-    if (localTeamsAppID) {
-      const result = await this.AppStudioPlugin.updateApp(
-        appDefinition,
-        "localDebug",
-        false,
-        localTeamsAppID,
-        await ctx.appStudioToken?.getAccessToken(),
-        ctx.logProvider,
-        ctx.root
-      );
-      if (result.isErr()) {
-        return result;
-      }
-    } else {
-      const maybeTeamsAppId = await (this.AppStudioPlugin as AppStudioPlugin).updateApp(
-        appDefinition,
-        "localDebug",
-        true,
-        undefined,
-        await ctx.appStudioToken?.getAccessToken(),
-        ctx.logProvider,
-        ctx.root
-      );
-      if (maybeTeamsAppId.isErr()) {
-        return maybeTeamsAppId;
-      }
+
+    const appStudioPlugin = this.AppStudioPlugin as AppStudioPlugin;
+    const maybeTeamsAppId = await appStudioPlugin.getAppDefinitionAndUpdate(
+      getPluginContext(ctx, this.AppStudioPlugin.name, manifest),
+      "localDebug",
+      manifest
+    );
+    if (maybeTeamsAppId.isErr()) {
+      return maybeTeamsAppId;
+    }
+    if (!localTeamsAppID) {
       ctx.config.get(GLOBAL_CONFIG)?.set(LOCAL_DEBUG_TEAMS_APP_ID, maybeTeamsAppId.value);
     }
+
     return ok(Void);
   }
 
@@ -1507,8 +1441,9 @@ export class TeamsAppSolution implements Solution {
     const array = namespace.split("/");
     let manifest: TeamsAppManifest | undefined = undefined;
     if (isDynamicQuestion) {
-      const maybeManifest = await (this
-        .AppStudioPlugin as AppStudioPlugin).reloadManifestAndCheckRequiredFields(ctx.root);
+      const maybeManifest = await (
+        this.AppStudioPlugin as AppStudioPlugin
+      ).reloadManifestAndCheckRequiredFields(ctx.root);
       if (maybeManifest.isErr()) {
         return err(maybeManifest.error);
       }
@@ -1850,102 +1785,22 @@ export class TeamsAppSolution implements Solution {
       } else if (method === "validateManifest") {
         const appStudioPlugin = this.AppStudioPlugin as AppStudioPlugin;
         const pluginCtx = getPluginContext(ctx, appStudioPlugin.name);
-
-        let manifestString: string | undefined = undefined;
-        if (this.spfxSelected(ctx)) {
-          manifestString = (
-            await fs.readFile(`${ctx.root}/.${ConfigFolderName}/${REMOTE_MANIFEST}`)
-          ).toString();
-        } else {
-          const maybeManifest = await appStudioPlugin.reloadManifestAndCheckRequiredFields(
-            ctx.root
-          );
-          if (maybeManifest.isErr()) {
-            return maybeManifest;
-          }
-          const manifestTpl = maybeManifest.value;
-          const pluginCtx = getPluginContext(ctx, this.AppStudioPlugin.name);
-          const maybeSelectedPlugins = this.getSelectedPlugins(ctx);
-          const manifest = appStudioPlugin
-            .createManifestForRemote(pluginCtx, maybeSelectedPlugins, manifestTpl)
-            .map((result) => result[1]);
-          if (manifest.isOk()) {
-            manifestString = JSON.stringify(manifest.value);
-          } else {
-            ctx.logProvider?.error("[Teams Toolkit] Manifest Validation failed!");
-            const isProvisionSucceeded = this.checkWetherProvisionSucceeded(ctx.config);
-            if (
-              manifest.error.name === SolutionError.GetRemoteConfigError &&
-              !isProvisionSucceeded
-            ) {
-              return err(
-                returnUserError(
-                  new Error(
-                    "Manifest validation failed. You must run `Provision in the Cloud` first to fill out certain fields in manifest."
-                  ),
-                  "Solution",
-                  SolutionError.GetRemoteConfigError
-                )
-              );
-            } else {
-              return err(manifest.error);
-            }
-          }
-        }
-        return await appStudioPlugin.validateManifest(pluginCtx, manifestString);
+        return await appStudioPlugin.validateManifest(pluginCtx);
       } else if (method === "buildPackage") {
         const appStudioPlugin = this.AppStudioPlugin as AppStudioPlugin;
         const pluginCtx = getPluginContext(ctx, appStudioPlugin.name);
-
-        let manifestString: string | undefined = undefined;
-
-        if (this.spfxSelected(ctx)) {
-          manifestString = (
-            await fs.readFile(`${ctx.root}/.${ConfigFolderName}/${REMOTE_MANIFEST}`)
-          ).toString();
-        } else {
-          const manifestTpl: TeamsAppManifest = await fs.readJSON(
-            `${ctx.root}/.${ConfigFolderName}/${REMOTE_MANIFEST}`
-          );
-          const maybeSelectedPlugins = this.getSelectedPlugins(ctx);
-          const manifest = appStudioPlugin
-            .createManifestForRemote(pluginCtx, maybeSelectedPlugins, manifestTpl)
-            .map((result) => result[1]);
-          if (manifest.isOk()) {
-            manifestString = JSON.stringify(manifest.value);
-          } else {
-            ctx.logProvider?.error("[Teams Toolkit] Teams Package build failed!");
-            const isProvisionSucceeded = this.checkWetherProvisionSucceeded(ctx.config);
-            if (
-              manifest.error.name === SolutionError.GetRemoteConfigError &&
-              !isProvisionSucceeded
-            ) {
-              return err(
-                returnUserError(
-                  new Error(
-                    "Teams package build failed. You must run `Provision in the Cloud` first to fill out certain fields in manifest."
-                  ),
-                  "Solution",
-                  SolutionError.GetRemoteConfigError
-                )
-              );
-            } else {
-              return err(manifest.error);
-            }
-          }
-        }
         return await appStudioPlugin.buildTeamsPackage(
           pluginCtx,
-          `${ctx.root}/.${ConfigFolderName}`,
-          manifestString
+          `${ctx.root}/.${ConfigFolderName}`
         );
       } else if (array.length == 2) {
         const pluginName = array[1];
         const pluginMap = getAllResourcePluginMap();
         const plugin = pluginMap.get(pluginName);
         if (plugin && plugin.executeUserTask) {
-          const maybeManifest = await (this
-            .AppStudioPlugin as AppStudioPlugin).reloadManifestAndCheckRequiredFields(ctx.root);
+          const maybeManifest = await (
+            this.AppStudioPlugin as AppStudioPlugin
+          ).reloadManifestAndCheckRequiredFields(ctx.root);
           if (maybeManifest.isErr()) {
             return maybeManifest;
           }
@@ -2135,18 +1990,11 @@ export class TeamsAppSolution implements Solution {
     });
     const manifest: TeamsAppManifest = JSON.parse(manifestStr);
     await fs.writeFile(manifestPath, manifestStr);
-    const appDefinition = (this.AppStudioPlugin as AppStudioPlugin).convertToAppDefinition(
-      manifest,
-      true
-    );
-    const maybeTeamsAppId = await (this.AppStudioPlugin as AppStudioPlugin).updateApp(
-      appDefinition,
+    const appStudioPlugin: AppStudioPlugin = this.AppStudioPlugin as any;
+    const maybeTeamsAppId = await appStudioPlugin.getAppDefinitionAndUpdate(
+      getPluginContext(ctx, this.AppStudioPlugin.name, manifest),
       "remote",
-      true,
-      undefined,
-      await ctx.appStudioToken?.getAccessToken(),
-      ctx.logProvider,
-      ctx.root
+      manifest
     );
     if (maybeTeamsAppId.isErr()) {
       return err(maybeTeamsAppId.error);
