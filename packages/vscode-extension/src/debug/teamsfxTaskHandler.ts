@@ -13,7 +13,13 @@ import { isValidProject } from "@microsoft/teamsfx-core";
 import { getNpmInstallLogInfo, NpmInstallLogInfo } from "./npmLogHandler";
 import * as path from "path";
 import { showError } from "../handlers";
-import { errorDetail, issueLink, issueTemplate, npmInstall, npmInstallErrorMessage } from "./constants";
+import {
+  errorDetail,
+  issueLink,
+  issueTemplate,
+  npmInstall,
+  npmInstallErrorMessage,
+} from "./constants";
 
 interface IRunningTeamsfxTask {
   source: string;
@@ -73,7 +79,8 @@ function displayTerminal(taskName: string): boolean {
 }
 
 function onDidStartTaskProcessHandler(event: vscode.TaskProcessStartEvent): void {
-  if (ext.workspaceUri && isValidProject(ext.workspaceUri.fsPath)) {
+  if (ext.workspaceUri) {
+    // && isValidProject(ext.workspaceUri.fsPath)
     const task = event.execution.task;
     if (task.scope !== undefined && isTeamsfxTask(task)) {
       allRunningTeamsfxTasks.set(
@@ -112,24 +119,22 @@ async function onDidEndTaskProcessHandler(event: vscode.TaskProcessEndEvent): Pr
       try {
         if (cwd !== undefined && event.exitCode !== undefined && event.exitCode !== 0) {
           npmInstallLogInfo = await getNpmInstallLogInfo();
-          showError(new SystemError(
-            npmInstall,
-            npmInstallErrorMessage,
-            task.name,
-            issueTemplate + errorDetail + JSON.stringify(npmInstallLogInfo),
-            issueLink,
-            npmInstallLogInfo
-          ));
+          showError(
+            new SystemError(
+              npmInstall,
+              npmInstallErrorMessage,
+              task.name,
+              issueTemplate + errorDetail + JSON.stringify(npmInstallLogInfo),
+              issueLink,
+              npmInstallLogInfo
+            )
+          );
         }
       } catch {
         // ignore any error
-        showError(new SystemError(
-          npmInstall,
-          npmInstallErrorMessage,
-          task.name,
-          issueTemplate,
-          issueLink
-        ));
+        showError(
+          new SystemError(npmInstall, npmInstallErrorMessage, task.name, issueTemplate, issueLink)
+        );
       }
 
       const properties: { [key: string]: string } = {
@@ -230,8 +235,9 @@ function onDidTerminateDebugSessionHandler(event: vscode.DebugSession): void {
       // ignore telemetry error
     }
 
-    const extConfig: vscode.WorkspaceConfiguration =
-      vscode.workspace.getConfiguration("fx-extension");
+    const extConfig: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration(
+      "fx-extension"
+    );
     if (extConfig.get<boolean>("stopTeamsToolkitTasksPostDebug", true)) {
       terminateAllRunningTeamsfxTasks();
     }

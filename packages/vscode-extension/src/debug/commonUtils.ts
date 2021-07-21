@@ -68,6 +68,14 @@ export async function getAuthServicePath(): Promise<string | undefined> {
   return result ? result[constants.authServicePathEnvKey] : undefined;
 }
 
+export function getV1AuthServicePath(workspacePath: string): string {
+  return path.join(workspacePath, "api-server");
+}
+
+export function getV1FrontendPath(workspacePath: string): string {
+  return path.join(workspacePath, "api-server");
+}
+
 export async function getBotLocalEnv(): Promise<{ [key: string]: string } | undefined> {
   return getLocalEnv(constants.botLocalEnvPrefix);
 }
@@ -98,7 +106,7 @@ export async function getLocalDebugTeamsAppId(
   const func: Func = {
     namespace: "fx-solution-azure/fx-resource-local-debug",
     method: "getLaunchInput",
-    params: isLocalSideloadingConfiguration ? "local" : "remote"
+    params: isLocalSideloadingConfiguration ? "local" : "remote",
   };
   try {
     const inputs = getSystemInputs();
@@ -244,6 +252,18 @@ export function getLocalTeamsAppId(): string | undefined {
       const envJson = JSON.parse(fs.readFileSync(envJsonPath, "utf8"));
       return envJson.solution.localDebugTeamsAppId;
     }
+  }
+
+  return undefined;
+}
+
+export function getTeamsToolkitVersion(): string | undefined {
+  if (ext.workspaceUri) {
+    const ws = ext.workspaceUri.fsPath;
+    const env = getActiveEnv();
+    const envJsonPath = path.join(ws, `.${ConfigFolderName}/env.${env}.json`);
+    const envJson = JSON.parse(fs.readFileSync(envJsonPath, "utf8"));
+    return envJson.solution.teamsToolkitVersion;
   }
 
   return undefined;

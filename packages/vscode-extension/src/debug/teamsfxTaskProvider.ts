@@ -27,13 +27,19 @@ export class TeamsfxTaskProvider implements vscode.TaskProvider {
       }
 
       const programmingLanguage = await commonUtils.getProgrammingLanguage();
+      const teamsToolkitVersion = await commonUtils.getTeamsToolkitVersion();
 
       // Always provide the following tasks no matter whether it is defined in tasks.json
       const frontendRoot = await commonUtils.getProjectRoot(
         workspacePath,
         constants.frontendFolderName
       );
-      if (frontendRoot) {
+
+      if (teamsToolkitVersion) {
+        tasks.push(await this.createV1FrontendStartTask(workspaceFolder, workspacePath));
+      }
+
+      if (frontendRoot && !teamsToolkitVersion) {
         tasks.push(await this.createFrontendStartTask(workspaceFolder, frontendRoot));
       }
 
@@ -50,8 +56,17 @@ export class TeamsfxTaskProvider implements vscode.TaskProvider {
         }
       }
 
+      if (teamsToolkitVersion) {
+        tasks.push(
+          await this.createV1AuthStartTask(
+            workspaceFolder,
+            commonUtils.getV1AuthServicePath(workspacePath)
+          )
+        );
+      }
+
       const authRoot = await commonUtils.getAuthServicePath();
-      if (authRoot) {
+      if (authRoot && !teamsToolkitVersion) {
         tasks.push(await this.createAuthStartTask(workspaceFolder, authRoot));
       }
 
@@ -103,6 +118,32 @@ export class TeamsfxTaskProvider implements vscode.TaskProvider {
       command,
       TeamsfxTaskProvider.type,
       new vscode.ShellExecution(commandLine, options),
+      problemMatchers
+    );
+    task.isBackground = true;
+    return task;
+  }
+
+  private async createV1FrontendStartTask(
+    workspaceFolder: vscode.WorkspaceFolder,
+    projectRoot: string,
+    definition?: vscode.TaskDefinition,
+    problemMatchers?: string | string[]
+  ): Promise<vscode.Task> {
+    const command: string = constants.frontendStartCommand;
+    definition = definition || { type: TeamsfxTaskProvider.type, command };
+    const env = await commonUtils.getFrontendLocalEnv();
+    const options: vscode.ShellExecutionOptions = {
+      cwd: projectRoot,
+      env,
+    };
+    problemMatchers = problemMatchers || constants.v1FrontendProblemMatcher;
+    const task = new vscode.Task(
+      definition,
+      workspaceFolder,
+      command,
+      TeamsfxTaskProvider.type,
+      new vscode.ShellExecution("npm run start", options),
       problemMatchers
     );
     task.isBackground = true;
@@ -172,6 +213,35 @@ export class TeamsfxTaskProvider implements vscode.TaskProvider {
       TeamsfxTaskProvider.type,
       new vscode.ProcessExecution(dotnetPath, ["Microsoft.TeamsFx.SimpleAuth.dll"], options),
       constants.authProblemMatcher
+    );
+    task.isBackground = true;
+    task.presentationOptions.reveal = vscode.TaskRevealKind.Silent;
+    return task;
+  }
+
+  private async createV1AuthStartTask(
+    workspaceFolder: vscode.WorkspaceFolder,
+    projectRoot: string,
+    definition?: vscode.TaskDefinition,
+    problemMatchers?: string | string[]
+  ): Promise<vscode.Task> {
+    const command = constants.authStartCommand;
+    definition = definition || { type: TeamsfxTaskProvider.type, command };
+
+    const env = await commonUtils.getAuthLocalEnv();
+    const options: vscode.ShellExecutionOptions = {
+      cwd: projectRoot,
+      env,
+    };
+    problemMatchers = problemMatchers || constants.v1AuthProblemMatcher;
+
+    const task = new vscode.Task(
+      definition,
+      workspaceFolder,
+      command,
+      TeamsfxTaskProvider.type,
+      new vscode.ShellExecution("npm run start", options),
+      problemMatchers
     );
     task.isBackground = true;
     task.presentationOptions.reveal = vscode.TaskRevealKind.Silent;

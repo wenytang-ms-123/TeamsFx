@@ -179,6 +179,52 @@ export class FxCore implements Core {
     return ok(projectPath);
   }
 
+  // @hooks([ErrorHandlerMW, QuestionModelMW, ContextInjecterMW, ConfigWriterMW])
+  // async createV1Project(projectPath: string, ctx?: CoreHookContext): Promise<Result<string, FxError>> {
+  //   const folderExist = await fs.pathExists(projectPath);
+  //   if (folderExist) {
+  //     return err(ProjectFolderExistError(projectPath));
+  //   }
+
+  //   const solution = await defaultSolutionLoader.loadSolution(undefined);
+  //   const projectSettings: ProjectSettings = {
+  //     appName: "app-name",
+  //     projectId: uuid.v4(),
+  //     currentEnv: "default",
+  //     solutionSettings: {
+  //       name: solution.name,
+  //       version: "1.0.0",
+  //     },
+  //   };
+
+  //   const solutionContext: SolutionContext = {
+  //     projectSettings: projectSettings,
+  //     config: new Map<string, PluginConfig>(),
+  //     root: projectPath,
+  //     ...this.tools,
+  //     ...this.tools.tokenProvider,
+  //     answers: inputs,
+  //   };
+
+  //   await fs.ensureDir(projectPath);
+  //   await fs.ensureDir(path.join(projectPath, `.${ConfigFolderName}`));
+
+  //   const createRes = await solution.create(solutionContext);
+  //   if (createRes.isErr()) {
+  //     return createRes;
+  //   }
+
+  //   const scaffoldRes = await solution.scaffold(solutionContext);
+  //   if (scaffoldRes.isErr()) {
+  //     return scaffoldRes;
+  //   }
+
+  //   ctx!.solution = solution;
+  //   ctx!.solutionContext = solutionContext;
+
+  //   return ok(projectPath);
+  // }
+
   async downloadSample(inputs: Inputs): Promise<Result<string, FxError>> {
     const folder = inputs[QuestionRootFolder.name] as string;
     const sample = inputs[CoreQuestionNames.Samples] as OptionItem;

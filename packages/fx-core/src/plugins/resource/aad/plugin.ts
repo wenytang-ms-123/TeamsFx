@@ -186,15 +186,18 @@ export class AadAppForTeamsImpl {
     await DialogUtils.progress?.start(ProgressDetail.Starting);
     await DialogUtils.progress?.next(ProgressDetail.UpdateRedirectUri);
 
+    const v1TeamsApp = ctx.configOfOtherPlugins?.get("solution")?.get("teamsToolkitVersion");
     const redirectUris: string[] = AadAppForTeamsImpl.getRedirectUris(
       config.frontendEndpoint,
-      config.botEndpoint
+      config.botEndpoint,
+      !!v1TeamsApp
     );
     await AadAppClient.updateAadAppRedirectUri(
       ctx,
       isLocalDebug ? Messages.EndPostLocalDebug.telemetry : Messages.EndPostProvision.telemetry,
       config.objectId as string,
-      redirectUris
+      redirectUris,
+      !!v1TeamsApp
     );
     ctx.logProvider?.info(Messages.getLog(Messages.UpdateRedirectUriSuccess));
 
@@ -260,11 +263,16 @@ export class AadAppForTeamsImpl {
 
   private static getRedirectUris(
     frontendEndpoint: string | undefined,
-    botEndpoint: string | undefined
+    botEndpoint: string | undefined,
+    v1TeamsApp?: boolean
   ) {
     const redirectUris: string[] = [];
     if (frontendEndpoint) {
-      redirectUris.push(`${frontendEndpoint}/auth-end.html`);
+      if (v1TeamsApp) {
+        redirectUris.push(`${frontendEndpoint}/auth-end`);
+      } else {
+        redirectUris.push(`${frontendEndpoint}/auth-end.html`);
+      }
     }
 
     if (botEndpoint) {

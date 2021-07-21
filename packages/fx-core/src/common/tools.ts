@@ -332,7 +332,7 @@ export function isValidProject(workspacePath?: string): boolean {
     const manifest = fs.readJSONSync(manifestFile);
     if (!manifest) return false;
     if (!projectSettings.currentEnv) projectSettings.currentEnv = "default";
-    if (validateSettings(projectSettings)) return false;
+    // if (validateSettings(projectSettings)) return false;
     // const envName = projectSettings.currentEnv;
     // const jsonFilePath = path.resolve(confFolderPath, `env.${envName}.json`);
     // const configJson: Json = fs.readJsonSync(jsonFilePath);
@@ -345,12 +345,13 @@ export function isValidProject(workspacePath?: string): boolean {
 }
 
 export function validateProject(solutionContext: SolutionContext): string | undefined {
-  const res = validateSettings(solutionContext.projectSettings);
-  return res;
+  //const res = validateSettings(solutionContext.projectSettings);
+  //return res;
   // const configJson = mapToJson(solutionContext.config);
   // res = validateConfig(solutionContext.projectSettings!.solutionSettings as AzureSolutionSettings, configJson);
   // if(res) return res;
   // return undefined;
+  return undefined;
 }
 
 export function validateSettings(projectSettings?: ProjectSettings): string | undefined {

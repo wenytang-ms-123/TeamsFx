@@ -196,6 +196,7 @@ export class LocalDebugPlugin implements Plugin {
     const vscEnv = ctx.answers?.vscodeEnv;
     const selectedPlugins = (ctx.projectSettings?.solutionSettings as AzureSolutionSettings)
       ?.activeResourcePlugins;
+    const includeV1 = true;
     const includeFrontend = selectedPlugins?.some(
       (pluginName) => pluginName === FrontendHostingPlugin.Name
     );
@@ -240,6 +241,10 @@ export class LocalDebugPlugin implements Plugin {
 
       ctx.config.set(LocalDebugConfigKeys.LocalAuthEndpoint, localAuthEndpoint);
 
+      if (includeV1) {
+        ctx.config.set(LocalDebugConfigKeys.LocalTabEndpoint, localTabEndpoint);
+        ctx.config.set(LocalDebugConfigKeys.LocalTabDomain, localTabDomain);
+      }
       if (includeFrontend) {
         ctx.config.set(LocalDebugConfigKeys.LocalTabEndpoint, localTabEndpoint);
         ctx.config.set(LocalDebugConfigKeys.LocalTabDomain, localTabDomain);
@@ -290,6 +295,8 @@ export class LocalDebugPlugin implements Plugin {
   public async postLocalDebug(ctx: PluginContext): Promise<Result<any, FxError>> {
     const selectedPlugins = (ctx.projectSettings?.solutionSettings as AzureSolutionSettings)
       ?.activeResourcePlugins;
+
+    const includeV1 = true;
     const includeFrontend = selectedPlugins?.some(
       (pluginName) => pluginName === FrontendHostingPlugin.Name
     );
@@ -330,6 +337,29 @@ export class LocalDebugPlugin implements Plugin {
       const localAuthPackagePath = runtimeConnectorConfigs?.get(
         RuntimeConnectorPlugin.FilePath
       ) as string;
+
+      if (includeV1) {
+        localEnvs["FRONTEND_REACT_APP_AZURE_APP_REGISTRATION_ID"] = clientId;
+        localEnvs["FRONTEND_REACT_APP_BASE_URL"] = "https://localhost:3000";
+        localEnvs[LocalEnvAuthKeys.ClientId] = clientId;
+        localEnvs[LocalEnvAuthKeys.ClientSecret] = clientSecret;
+        // local certificate
+        try {
+          if (trustDevCert === undefined) {
+            trustDevCert = "true";
+            ctx.config.set(LocalDebugConfigKeys.TrustDevelopmentCertificate, trustDevCert);
+          }
+          const needTrust = trustDevCert.trim().toLowerCase() === "true";
+          const certManager = new LocalCertificateManager(ctx);
+          const localCert = await certManager.setupCertificate(needTrust);
+          if (localCert) {
+            localEnvs[LocalEnvCertKeys.SslCrtFile] = localCert.certPath;
+            localEnvs[LocalEnvCertKeys.SslKeyFile] = localCert.keyPath;
+          }
+        } catch (error) {
+          // do not break if cert error
+        }
+      }
 
       if (includeFrontend) {
         // frontend local envs

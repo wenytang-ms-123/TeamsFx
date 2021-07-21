@@ -331,6 +331,64 @@
         "severity": "error"
       },
       {
+        "name": "teamsfx-v1-frontend-watch",
+        "label": "%teamsfx.problemMatchers.teamsfxV1FrontendWatch%",
+        "owner": "Teams Toolkit",
+        "source": "teamsfx",
+        "applyTo": "allDocuments",
+        "fileLocation": [
+          "relative",
+          "${workspaceFolder}"
+        ],
+        "pattern": [
+          {
+            "regexp": "^.*?\\.js$",
+            "file": 0
+          },
+          {
+            "regexp": "^\\s*Line\\s+(\\d+):(\\d+):\\s+(.*)$",
+            "line": 1,
+            "column": 2,
+            "message": 3
+          }
+        ],
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*",
+          "endsPattern": "Compiled|Failed"
+        },
+        "severity": "error"
+      },
+      {
+        "name": "teamsfx-v1-auth-watch",
+        "label": "%teamsfx.problemMatchers.teamsfxV1AuthWatch%",
+        "owner": "Teams Toolkit",
+        "source": "teamsfx",
+        "applyTo": "allDocuments",
+        "fileLocation": [
+          "relative",
+          "${workspaceFolder}/api-server"
+        ],
+        "pattern": [
+          {
+            "regexp": "^.*?\\.js$",
+            "file": 0
+          },
+          {
+            "regexp": "^\\s*Line\\s+(\\d+):(\\d+):\\s+(.*)$",
+            "line": 1,
+            "column": 2,
+            "message": 3
+          }
+        ],
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*",
+          "endsPattern": ".*"
+        },
+        "severity": "error"
+      },
+      {
         "name": "teamsfx-backend-watch",
         "label": "%teamsfx.problemMatchers.teamsfxbackendWatch%",
         "owner": "Teams Toolkit",

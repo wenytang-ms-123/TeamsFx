@@ -85,10 +85,17 @@ export class AadAppClient {
     ctx: PluginContext,
     stage: string,
     objectId: string,
-    redirectUris: string[]
+    redirectUris: string[],
+    v1TeamsApp?: boolean
   ): Promise<void> {
     try {
-      const updateRedirectUriObject = AadAppClient.getAadUrlObject(redirectUris);
+      let updateRedirectUriObject: IAADDefinition;
+      if (v1TeamsApp) {
+        updateRedirectUriObject = AadAppClient.getAadUrlObjectForV1(redirectUris);
+      } else {
+        updateRedirectUriObject = AadAppClient.getAadUrlObject(redirectUris);
+      }
+
       if (TokenProvider.audience === TokenAudience.AppStudio) {
         await AadAppClient.retryHanlder(ctx, stage, () =>
           AppStudio.updateAADApp(
@@ -313,6 +320,18 @@ export class AadAppClient {
     return {
       web: {
         redirectUris: redirectUris,
+      },
+    };
+  }
+
+  private static getAadUrlObjectForV1(redirectUris: string[]): IAADDefinition {
+    return {
+      web: {
+        redirectUris: redirectUris,
+        implicitGrantSettings: {
+          enableIdTokenIssuance: true,
+          enableAccessTokenIssuance: true,
+        },
       },
     };
   }

@@ -10,8 +10,10 @@ export const openWenClientCommand = "launch Teams web client";
 export const backendWatchCommand = "backend watch";
 
 export const frontendProblemMatcher = "$teamsfx-frontend-watch";
+export const v1FrontendProblemMatcher = "$teamsfx-v1-frontend-watch";
 export const backendProblemMatcher = "$teamsfx-backend-watch";
 export const authProblemMatcher = "$teamsfx-auth-watch";
+export const v1AuthProblemMatcher = "$teamsfx-v1-auth-watch";
 export const ngrokProblemMatcher = "$teamsfx-ngrok-watch";
 export const botProblemMatcher = "$teamsfx-bot-watch";
 export const tscWatchProblemMatcher = "$tsc-watch";
@@ -57,7 +59,8 @@ export const botPorts: [number, string[]][] = [
 ];
 
 export const npmInstall = "npmInstall";
-export const npmInstallErrorMessage= "NPM install encountered an error. Please refer to the output window for detailed error information or click 'Report Issue' button to report the issue.";
+export const npmInstallErrorMessage =
+  "NPM install encountered an error. Please refer to the output window for detailed error information or click 'Report Issue' button to report the issue.";
 export const issueLink = "https://github.com/OfficeDev/TeamsFx/issues/new?";
 export const issueTemplate = `
 **Describe the bug**

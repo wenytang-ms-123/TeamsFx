@@ -2,7 +2,8 @@
 // Licensed under the MIT license.
 
 export interface Web {
-  redirectUris: string[];
+  redirectUris?: string[];
+  implicitGrantSettings?: ImplicitGrantSettings;
 }
 
 export interface Oauth2PermissionScopes {
@@ -67,4 +68,9 @@ export interface IAADDefinition {
   optionalClaims?: OptionalClaims;
   requiredResourceAccess?: RequiredResourceAccess[];
   passwordCredentials?: PasswordCredential[];
+}
+
+export interface ImplicitGrantSettings {
+  enableIdTokenIssuance?: boolean;
+  enableAccessTokenIssuance?: boolean;
 }
