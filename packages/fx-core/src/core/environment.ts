@@ -6,17 +6,27 @@ import {
   CryptoProvider,
   err,
   FxError,
-  Json,
   ok,
   Result,
+  Void,
 } from "@microsoft/teamsfx-api";
 import path from "path";
 import fs from "fs-extra";
-import { deserializeDict, dataNeedEncryption, mergeSerectData, PathNotExistError } from "..";
+import {
+  deserializeDict,
+  dataNeedEncryption,
+  mergeSerectData,
+  PathNotExistError,
+  serializeDict,
+  sperateSecretData,
+  WriteFileError,
+  mapToJson,
+  objectToMap,
+} from "..";
 
 export interface EnvInfo {
   envName: string;
-  data: Json;
+  data: Map<string, any>;
 }
 
 export interface EnvFiles {
@@ -48,10 +58,41 @@ class EnvironmentManager {
       // TODO: handle the case that env file profile doesn't exist.
       return err(PathNotExistError(envFiles.envProfile));
     }
-    const data = await fs.readJson(envFiles.envProfile);
+    const envData = await fs.readJson(envFiles.envProfile);
+    
+    mergeSerectData(userData, envData);
+    const data = objectToMap(envData);
 
-    mergeSerectData(userData, data);
     return ok({ envName, data });
+  }
+
+  public async writeEnvProfile(
+    envData: Map<string, any>,
+    projectPath: string,
+    envName?: string,
+    cryptoProvider?: CryptoProvider
+  ): Promise<Result<Void, FxError>> {
+    if (!(await fs.pathExists(projectPath))) {
+      return err(PathNotExistError(projectPath));
+    }
+
+    envName = envName ?? this.defaultEnvName;
+    const envFiles = this.getEnvFilesPath(envName, projectPath);
+
+    const data = mapToJson(envData);
+    const secrets = sperateSecretData(data);
+    if (cryptoProvider) {
+      this.encrypt(secrets, cryptoProvider);
+    }
+
+    try {
+      await fs.writeFile(envFiles.envProfile, JSON.stringify(data, null, 4));
+      await fs.writeFile(envFiles.userDataFile, serializeDict(secrets));
+    } catch (error) {
+      return err(WriteFileError(error));
+    }
+
+    return ok(Void);
   }
 
   public getEnvFilesPath(envName: string, projectPath: string): EnvFiles {
@@ -71,26 +112,51 @@ class EnvironmentManager {
     }
 
     const content = await fs.readFile(userDataPath, "UTF-8");
-    const data = deserializeDict(content);
+    const secrets = deserializeDict(content);
     if (!cryptoProvider) {
-      return ok(data);
+      return ok(secrets);
     }
 
-    for (const secretKey of Object.keys(data)) {
+    return this.decrypt(secrets, cryptoProvider);
+  }
+
+  private encrypt(
+    secrets: Record<string, string>,
+    cryptoProvider: CryptoProvider
+  ): Result<Record<string, string>, FxError> {
+    for (const secretKey of Object.keys(secrets)) {
+      if (!dataNeedEncryption(secretKey)) {
+        continue;
+      }
+      const encryptedSecret = cryptoProvider.encrypt(secrets[secretKey]);
+      // always success
+      if (encryptedSecret.isOk()) {
+        secrets[secretKey] = encryptedSecret.value;
+      }
+    }
+
+    return ok(secrets);
+  }
+
+  private decrypt(
+    secrets: Record<string, string>,
+    cryptoProvider: CryptoProvider
+  ): Result<Record<string, string>, FxError> {
+    for (const secretKey of Object.keys(secrets)) {
       if (!dataNeedEncryption(secretKey)) {
         continue;
       }
 
-      const secretValue = data[secretKey];
+      const secretValue = secrets[secretKey];
       const plaintext = cryptoProvider.decrypt(secretValue);
       if (plaintext.isErr()) {
         return err(plaintext.error);
       }
 
-      data[secretKey] = plaintext.value;
+      secrets[secretKey] = plaintext.value;
     }
 
-    return ok(data);
+    return ok(secrets);
   }
 }
 
