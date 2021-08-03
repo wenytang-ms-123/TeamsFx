@@ -52,7 +52,13 @@ export const QuestionAppName: TextInputQuestion = {
 export const QuestionRootFolder: FolderQuestion = {
   type: "folder",
   name: CoreQuestionNames.Foler,
-  title: "Workspace folder"
+  title: "Workspace folder",
+};
+
+export const QuestionV1Folder: FolderQuestion = {
+  type: "folder",
+  name: "v1 folder",
+  title: "v1 project folder",
 };
 
 export const QuestionSelectSolution: SingleSelectQuestion = {
@@ -87,12 +93,29 @@ export const ScratchOptionNo: OptionItem = {
   detail: "Use an existing sample as a starting point for your new application.",
 };
 
-export function getCreateNewOrFromSampleQuestion(platform: Platform): SingleSelectQuestion {
+export function getCreateNewOrFromSampleQuestion(
+  platform: Platform,
+  v1?: boolean
+): SingleSelectQuestion {
+  if (v1) {
+    return {
+      type: "singleSelect",
+      name: CoreQuestionNames.CreateFromScratch,
+      title: "Teams Toolkit: Create a new Teams app",
+      staticOptions: [ScratchOptionYesVSC],
+      default: ScratchOptionYes.id,
+      placeholder: "Select an option",
+      skipSingleOption: true,
+    };
+  }
   return {
     type: "singleSelect",
     name: CoreQuestionNames.CreateFromScratch,
     title: "Teams Toolkit: Create a new Teams app",
-    staticOptions: (platform === Platform.VSCode)? [ScratchOptionYesVSC, ScratchOptionNoVSC]:[ScratchOptionYes, ScratchOptionNo],
+    staticOptions:
+      platform === Platform.VSCode
+        ? [ScratchOptionYesVSC, ScratchOptionNoVSC]
+        : [ScratchOptionYes, ScratchOptionNo],
     default: ScratchOptionYes.id,
     placeholder: "Select an option",
     skipSingleOption: true,

@@ -38,6 +38,12 @@ export async function activate(context: vscode.ExtensionContext) {
   );
   context.subscriptions.push(createCmd);
 
+  const createV1Cmd = vscode.commands.registerCommand(
+    "fx-extension.createV1",
+    handlers.createNewV1ProjectHandler
+  );
+  context.subscriptions.push(createV1Cmd);
+
   const debugCmd = vscode.commands.registerCommand("fx-extension.debug", handlers.debugHandler);
   context.subscriptions.push(debugCmd);
 

@@ -79,6 +79,7 @@ import {
   AskSubscriptionQuestion,
   addCapabilityQuestion,
   ProgrammingLanguageQuestion,
+  V1FrontendHostTypeQuestion,
 } from "./question";
 import Mustache from "mustache";
 import path from "path";
@@ -224,53 +225,12 @@ export class TeamsAppSolution implements Solution {
       capabilities: capabilities,
       azureResources: azureResources || [],
       activeResourcePlugins: [],
+      v1: ctx.v1,
     };
     projectSettings.solutionSettings = solutionSettings;
     return ok(solutionSettings);
   }
 
-  async createV2Header(ctx: SolutionContext): Promise<Result<any, FxError>> {
-    if (!ctx.config.has(GLOBAL_CONFIG)) {
-      ctx.config.set(GLOBAL_CONFIG, new ConfigMap());
-      // From question
-      ctx.config.get(GLOBAL_CONFIG)?.set(PROGRAMMING_LANGUAGE, "javascript");
-    }
-
-    const solutionSettings = {};
-
-    const templatesFolder = getTemplatesFolder();
-    const defaultColorPath = path.join(templatesFolder, "plugins", "solution", "defaultIcon.png");
-    const defaultOutlinePath = path.join(
-      templatesFolder,
-      "plugins",
-      "solution",
-      "defaultOutline.png"
-    );
-
-    await fs.copy(defaultColorPath, `${ctx.root}/.${ConfigFolderName}/color.png`);
-    await fs.copy(defaultOutlinePath, `${ctx.root}/.${ConfigFolderName}/outline.png`);
-    if (this.isAzureProject(ctx)) {
-      const manifestStr = await fs.readFile(`${ctx.root}/appPackage/manifest.json`, "utf8");
-      let manifest = JSON.parse(manifestStr);
-      manifest = await fs.readJSON(`${ctx.root}/appPackage/manifest.json`);
-      const baseUrl = manifest?.developer?.websiteUrl;
-      manifestStr.split(baseUrl).join("{baseUrl}");
-
-      // if (manifest) Object.assign(ctx.app, manifest);
-      await fs.writeFile(
-        `${ctx.root}/.${ConfigFolderName}/${REMOTE_MANIFEST}`,
-        JSON.stringify(manifest, null, 4)
-      );
-      await fs.writeJSON(`${ctx.root}/permissions.json`, DEFAULT_PERMISSION_REQUEST, { spaces: 4 });
-    } else {
-      const manifest = await (this.SpfxPlugin as SpfxPlugin).getManifest();
-      await fs.writeFile(
-        `${ctx.root}/.${ConfigFolderName}/${REMOTE_MANIFEST}`,
-        JSON.stringify(manifest, null, 4)
-      );
-    }
-    return ok(Void);
-  }
   /**
    * create
    */
@@ -288,6 +248,10 @@ export class TeamsAppSolution implements Solution {
     const lang = ctx.answers![AzureSolutionQuestionNames.ProgrammingLanguage] as string;
     if (lang) {
       ctx.config.get(GLOBAL_CONFIG)?.set(PROGRAMMING_LANGUAGE, lang);
+    }
+
+    if (ctx.v1) {
+      ctx.config.get(GLOBAL_CONFIG)?.set("teamsToolkitVersion", "v1");
     }
 
     const settingsRes = this.fillInSolutionSettings(ctx);
@@ -318,12 +282,28 @@ export class TeamsAppSolution implements Solution {
     await fs.copy(defaultColorPath, `${ctx.root}/.${ConfigFolderName}/color.png`);
     await fs.copy(defaultOutlinePath, `${ctx.root}/.${ConfigFolderName}/outline.png`);
     if (this.isAzureProject(ctx)) {
-      const manifest = await this.AppStudioPlugin.createManifest(ctx.projectSettings!);
+      let manifest: any;
+      if (!ctx.v1) {
+        manifest = await this.AppStudioPlugin.createManifest(ctx.projectSettings!);
+        await fs.writeFile(
+          `${ctx.root}/.${ConfigFolderName}/${REMOTE_MANIFEST}`,
+          JSON.stringify(manifest, null, 4)
+        );
+      } else {
+        manifest = await fs.readJSON(`${ctx.root}/appPackage/manifest.json`);
+        manifest.id = "{appid}";
+        manifest.validDomains = [];
+        manifest.webApplicationInfo = {
+          id: "{appClientId}",
+          resource: "{webApplicationInfoResource}",
+        };
+        const baseUrl = manifest?.developer?.websiteUrl;
+        let manifestStr = JSON.stringify(manifest, null, 4);
+        manifestStr = manifestStr.split(baseUrl).join("{baseUrl}");
+        await fs.writeFile(`${ctx.root}/.${ConfigFolderName}/${REMOTE_MANIFEST}`, manifestStr);
+      }
       // if (manifest) Object.assign(ctx.app, manifest);
-      await fs.writeFile(
-        `${ctx.root}/.${ConfigFolderName}/${REMOTE_MANIFEST}`,
-        JSON.stringify(manifest, null, 4)
-      );
+
       await fs.writeJSON(`${ctx.root}/permissions.json`, DEFAULT_PERMISSION_REQUEST, { spaces: 4 });
       ctx.telemetryReporter?.sendTelemetryEvent(SolutionTelemetryEvent.Create, {
         [SolutionTelemetryProperty.Component]: SolutionTelemetryComponentName,
@@ -966,12 +946,14 @@ export class TeamsAppSolution implements Solution {
 
     if (stage === Stage.create) {
       // 1. capabilities
-      const capQuestion = createCapabilityQuestion();
+      const capQuestion = createCapabilityQuestion(ctx.v1);
       const capNode = new QTreeNode(capQuestion);
       node.addChild(capNode);
 
       // 1.1 hostType
-      const hostTypeNode = new QTreeNode(FrontendHostTypeQuestion);
+      const hostTypeNode = new QTreeNode(
+        ctx.v1 ? V1FrontendHostTypeQuestion : FrontendHostTypeQuestion
+      );
       hostTypeNode.condition = { contains: TabOptionItem.id };
       capNode.addChild(hostTypeNode);
 
@@ -989,12 +971,14 @@ export class TeamsAppSolution implements Solution {
       }
 
       // 1.1.2 Azure Tab
-      const tabRes = await this.getTabScaffoldQuestions(ctx, true);
-      if (tabRes.isErr()) return tabRes;
-      if (tabRes.value) {
-        const tabNode = tabRes.value;
-        tabNode.condition = { equals: HostTypeOptionAzure.id };
-        hostTypeNode.addChild(tabNode);
+      if (!ctx.v1) {
+        const tabRes = await this.getTabScaffoldQuestions(ctx, true);
+        if (tabRes.isErr()) return tabRes;
+        if (tabRes.value) {
+          const tabNode = tabRes.value;
+          tabNode.condition = { equals: HostTypeOptionAzure.id };
+          hostTypeNode.addChild(tabNode);
+        }
       }
 
       // 1.2 Bot

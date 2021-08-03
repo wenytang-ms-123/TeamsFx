@@ -54,6 +54,8 @@ export interface Context {
   ui?: UserInteraction;
 
   cryptoProvider?: CryptoProvider;
+
+  v1?: boolean;
 }
 
 export interface SolutionContext extends Context {

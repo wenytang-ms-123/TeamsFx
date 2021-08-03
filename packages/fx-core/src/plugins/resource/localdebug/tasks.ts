@@ -9,7 +9,8 @@ export function generateTasks(
   includeFrontend: boolean,
   includeBackend: boolean,
   includeBot: boolean,
-  programmingLanguage: string
+  programmingLanguage: string,
+  v1?: boolean
 ): Record<string, unknown>[] {
   /**
    * Referenced by launch.json
@@ -30,6 +31,52 @@ export function generateTasks(
    */
   const tasks: Record<string, unknown>[] = [];
 
+  if (v1) {
+    tasks.push(
+      {
+        label: "Pre Debug Check",
+        dependsOn: ["dependency check", "prepare dev env"],
+        dependsOrder: "sequence",
+      },
+      {
+        label: "Start Frontend",
+        dependsOn: [`${ProductName}: frontend start`, `${ProductName}: auth start`],
+        dependsOrder: "parallel",
+      },
+      {
+        label: "dependency check",
+        type: "shell",
+        command: "echo ${command:fx-extension.validate-dependencies}",
+      },
+      {
+        label: "prepare dev env",
+        dependsOn: ["prepare local environment", "auth npm install", "frontend npm install"],
+        dependsOrder: "parallel",
+      },
+      {
+        label: "prepare local environment",
+        type: "shell",
+        command: "echo ${command:fx-extension.pre-debug-check}",
+      },
+      {
+        label: "frontend npm install",
+        type: "shell",
+        command: "npm install",
+        options: {
+          cwd: "${workspaceFolder}",
+        },
+      },
+      {
+        label: "auth npm install",
+        type: "shell",
+        command: "npm install",
+        options: {
+          cwd: "${workspaceFolder}/api-server",
+        },
+      }
+    );
+    return tasks;
+  }
   // Tab only
   if (includeFrontend && !includeBot) {
     tasks.push(

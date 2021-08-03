@@ -172,6 +172,11 @@ export async function createNewProjectHandler(args?: any[]): Promise<Result<null
   return await runCommand(Stage.create);
 }
 
+export async function createNewV1ProjectHandler(args?: any[]): Promise<Result<null, FxError>> {
+  ExtTelemetry.sendTelemetryEvent(TelemetryEvent.CreateProjectStart, getTriggerFromProperty(args));
+  return await runCommand(Stage.createV1);
+}
+
 export async function debugHandler(args?: any[]) {
   ExtTelemetry.sendTelemetryEvent(TelemetryEvent.NavigateToDebug, getTriggerFromProperty(args));
   await vscode.commands.executeCommand("workbench.view.debug");
@@ -255,6 +260,15 @@ export async function runCommand(stage: Stage): Promise<Result<any, FxError>> {
 
     if (stage === Stage.create) {
       const tmpResult = await core.createProject(inputs);
+      if (tmpResult.isErr()) {
+        result = err(tmpResult.error);
+      } else {
+        const uri = Uri.file(tmpResult.value);
+        await commands.executeCommand("vscode.openFolder", uri);
+        result = ok(null);
+      }
+    } else if (stage === Stage.createV1) {
+      const tmpResult = await core.createV1Project(inputs);
       if (tmpResult.isErr()) {
         result = err(tmpResult.error);
       } else {

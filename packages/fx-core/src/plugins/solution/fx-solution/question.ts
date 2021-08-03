@@ -78,7 +78,19 @@ export const AzureResourceApim: OptionItem = {
   description: "Azure Function App will be also selected to be published as an API",
 };
 
-export function createCapabilityQuestion(): MultiSelectQuestion {
+export function createCapabilityQuestion(v1?: boolean): MultiSelectQuestion {
+  if (v1) {
+    return {
+      name: AzureSolutionQuestionNames.Capabilities,
+      title: "Select capabilities",
+      type: "multiSelect",
+      staticOptions: [TabOptionItem],
+      default: [TabOptionItem.id],
+      placeholder: "Select at least 1 capability",
+      validation: { minItems: 1 },
+      skipSingleOption: true,
+    };
+  }
   return {
     name: AzureSolutionQuestionNames.Capabilities,
     title: "Select capabilities",
@@ -109,6 +121,15 @@ export const FrontendHostTypeQuestion: SingleSelectQuestion = {
       SolutionError.InternelError
     );
   },
+  default: HostTypeOptionAzure.id,
+  placeholder: "Select a hosting type",
+  skipSingleOption: true,
+};
+export const V1FrontendHostTypeQuestion: SingleSelectQuestion = {
+  name: AzureSolutionQuestionNames.HostType,
+  title: "Frontend hosting type",
+  type: "singleSelect",
+  staticOptions: [HostTypeOptionAzure],
   default: HostTypeOptionAzure.id,
   placeholder: "Select a hosting type",
   skipSingleOption: true,

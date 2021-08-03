@@ -65,6 +65,7 @@ export class LocalDebugPlugin implements Plugin {
     const includeFrontend = selectedPlugins?.some(
       (pluginName) => pluginName === FrontendHostingPlugin.Name
     );
+    const v1 = (ctx.projectSettings?.solutionSettings as AzureSolutionSettings).v1;
     const includeBackend = selectedPlugins?.some(
       (pluginName) => pluginName === FunctionPlugin.Name
     );
@@ -120,12 +121,12 @@ export class LocalDebugPlugin implements Plugin {
         );
       } else {
         const launchConfigurations = Launch.generateConfigurations(
-          includeFrontend,
+          v1 || includeFrontend,
           includeBackend,
           includeBot
         );
         const launchCompounds = Launch.generateCompounds(
-          includeFrontend,
+          v1 || includeFrontend,
           includeBackend,
           includeBot
         );
@@ -134,7 +135,8 @@ export class LocalDebugPlugin implements Plugin {
           includeFrontend,
           includeBackend,
           includeBot,
-          programmingLanguage
+          programmingLanguage,
+          v1
         );
 
         const localEnvProvider = new LocalEnvProvider(ctx.root);

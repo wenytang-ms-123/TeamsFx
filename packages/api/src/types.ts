@@ -143,6 +143,7 @@ export interface AzureSolutionSettings extends SolutionSettings {
   capabilities: string[];
   azureResources: string[];
   activeResourcePlugins: string[];
+  v1?: boolean;
 }
 
 /**

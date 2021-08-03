@@ -46,6 +46,7 @@
     "onCommand:fx-extension.openDocument",
     "onCommand:fx-extension.cmpAccounts",
     "onCommand:fx-extension.create",
+    "onCommand:fx-extension.createV1",
     "onCommand:fx-extension.addCapability",
     "onCommand:fx-extension.update",
     "onCommand:fx-extension.openManifest",
@@ -220,6 +221,10 @@
       {
         "command": "fx-extension.create",
         "title": "Teams: Create New Project "
+      },
+      {
+        "command": "fx-extension.createV1",
+        "title": "Teams: Upgrade V1 Project "
       },
       {
         "command": "fx-extension.update",

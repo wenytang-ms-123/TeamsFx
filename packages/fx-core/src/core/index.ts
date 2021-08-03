@@ -44,6 +44,7 @@ import {
   ScratchOptionNo,
   ScratchOptionYes,
   getCreateNewOrFromSampleQuestion,
+  QuestionV1Folder,
 } from "./question";
 import * as jsonschema from "jsonschema";
 import AdmZip from "adm-zip";
@@ -179,51 +180,86 @@ export class FxCore implements Core {
     return ok(projectPath);
   }
 
-  // @hooks([ErrorHandlerMW, QuestionModelMW, ContextInjecterMW, ConfigWriterMW])
-  // async createV1Project(projectPath: string, ctx?: CoreHookContext): Promise<Result<string, FxError>> {
-  //   const folderExist = await fs.pathExists(projectPath);
-  //   if (folderExist) {
-  //     return err(ProjectFolderExistError(projectPath));
-  //   }
+  @hooks([ErrorHandlerMW, QuestionModelMW, ContextInjecterMW, ConfigWriterMW])
+  async createV1Project(inputs: Inputs, ctx?: CoreHookContext): Promise<Result<string, FxError>> {
+    const globalStateDescription = "openReadme";
 
-  //   const solution = await defaultSolutionLoader.loadSolution(undefined);
-  //   const projectSettings: ProjectSettings = {
-  //     appName: "app-name",
-  //     projectId: uuid.v4(),
-  //     currentEnv: "default",
-  //     solutionSettings: {
-  //       name: solution.name,
-  //       version: "1.0.0",
-  //     },
-  //   };
+    // if (scratch === ScratchOptionNo.id) {
+    //   // create from sample
+    //   const downloadRes = await this.downloadSample(inputs);
+    //   if (downloadRes.isErr()) {
+    //     return err(downloadRes.error);
+    //   }
+    //   projectPath = downloadRes.value;
+    //   globalStateDescription = "openSampleReadme";
+    // } else {
+    // create from new
+    const appName = "microsoftteamsapp";
 
-  //   const solutionContext: SolutionContext = {
-  //     projectSettings: projectSettings,
-  //     config: new Map<string, PluginConfig>(),
-  //     root: projectPath,
-  //     ...this.tools,
-  //     ...this.tools.tokenProvider,
-  //     answers: inputs,
-  //   };
+    // const validateResult = jsonschema.validate(appName, {
+    //   pattern: ProjectNamePattern,
+    // });
+    // if (validateResult.errors && validateResult.errors.length > 0) {
+    //   return err(InvalidInputError(`${validateResult.errors[0].message}`, inputs));
+    // }
 
-  //   await fs.ensureDir(projectPath);
-  //   await fs.ensureDir(path.join(projectPath, `.${ConfigFolderName}`));
+    const projectPath = inputs[QuestionV1Folder.name] as string;
 
-  //   const createRes = await solution.create(solutionContext);
-  //   if (createRes.isErr()) {
-  //     return createRes;
-  //   }
+    inputs.projectPath = projectPath;
+    const solution = await defaultSolutionLoader.loadSolution(inputs);
+    const projectSettings: ProjectSettings = {
+      appName: appName,
+      projectId: uuid.v4(),
+      currentEnv: "default",
+      solutionSettings: {
+        name: solution.name,
+        version: "1.0.0",
+      },
+    };
 
-  //   const scaffoldRes = await solution.scaffold(solutionContext);
-  //   if (scaffoldRes.isErr()) {
-  //     return scaffoldRes;
-  //   }
+    const solutionContext: SolutionContext = {
+      projectSettings: projectSettings,
+      config: new Map<string, PluginConfig>(),
+      root: projectPath,
+      ...this.tools,
+      ...this.tools.tokenProvider,
+      answers: inputs,
+      v1: true,
+    };
 
-  //   ctx!.solution = solution;
-  //   ctx!.solutionContext = solutionContext;
+    await fs.ensureDir(projectPath);
+    await fs.ensureDir(path.join(projectPath, `.${ConfigFolderName}`));
 
-  //   return ok(projectPath);
-  // }
+    // const createResult = await this.createBasicFolderStructure(inputs);
+    // if (createResult.isErr()) {
+    //   return err(createResult.error);
+    // }
+
+    const createRes = await solution.create(solutionContext);
+    if (createRes.isErr()) {
+      return createRes;
+    }
+
+    const scaffoldRes = await solution.scaffold(solutionContext);
+    if (scaffoldRes.isErr()) {
+      return scaffoldRes;
+    }
+
+    ctx!.solution = solution;
+    ctx!.solutionContext = solutionContext;
+    //}
+
+    if (inputs.platform === Platform.VSCode) {
+      await this.tools.dialog?.communicate(
+        new DialogMsg(DialogType.Ask, {
+          type: QuestionType.UpdateGlobalState,
+          description: globalStateDescription,
+        })
+      );
+    }
+
+    return ok(projectPath);
+  }
 
   async downloadSample(inputs: Inputs): Promise<Result<string, FxError>> {
     const folder = inputs[QuestionRootFolder.name] as string;
@@ -530,6 +566,47 @@ export class FxCore implements Core {
     }
     createNew.addChild(new QTreeNode(QuestionRootFolder));
     createNew.addChild(new QTreeNode(QuestionAppName));
+
+    // create from sample
+    const sampleNode = new QTreeNode(SampleSelect);
+    node.addChild(sampleNode);
+    sampleNode.condition = { equals: ScratchOptionNo.id };
+    sampleNode.addChild(new QTreeNode(QuestionRootFolder));
+
+    return ok(node.trim());
+  }
+
+  async _getQuestionsForCreateV1Project(
+    inputs: Inputs
+  ): Promise<Result<QTreeNode | undefined, FxError>> {
+    const node = new QTreeNode(getCreateNewOrFromSampleQuestion(inputs.platform, true));
+    // create new
+    const createNew = new QTreeNode({ type: "group" });
+    node.addChild(createNew);
+    createNew.condition = { equals: ScratchOptionYes.id };
+    const globalSolutions: Solution[] = await defaultSolutionLoader.loadGlobalSolutions(inputs);
+    const solutionNames: string[] = globalSolutions.map((s) => s.name);
+    const selectSolution: SingleSelectQuestion = QuestionSelectSolution;
+    selectSolution.staticOptions = solutionNames;
+    const solutionSelectNode = new QTreeNode(selectSolution);
+    createNew.addChild(solutionSelectNode);
+    const solutionContext = await newSolutionContext(this.tools, inputs);
+    for (const v of globalSolutions) {
+      if (v.getQuestions) {
+        solutionContext.v1 = true;
+        const res = await v.getQuestions(Stage.create, solutionContext);
+        if (res.isErr()) return res;
+        if (res.value) {
+          const solutionNode = res.value as QTreeNode;
+          solutionNode.condition = { equals: v.name };
+          if (solutionNode.data) solutionSelectNode.addChild(solutionNode);
+        }
+      }
+    }
+    //createNew.addChild(new QTreeNode(QuestionRootFolder));
+    //createNew.addChild(new QTreeNode(QuestionAppName));
+    createNew.addChild(new QTreeNode(QuestionV1Folder));
+    //createNew.addChild(new QTreeNode(QuestionAppName));
 
     // create from sample
     const sampleNode = new QTreeNode(SampleSelect);

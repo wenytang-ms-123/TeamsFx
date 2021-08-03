@@ -47,6 +47,8 @@ export interface AzureSolutionSettings extends SolutionSettings {
     capabilities: string[];
     // (undocumented)
     hostType: string;
+    // (undocumented)
+    v1?: boolean;
 }
 
 // @public
@@ -130,6 +132,8 @@ export interface Context {
     treeProvider?: TreeProvider;
     // (undocumented)
     ui?: UserInteraction;
+    // (undocumented)
+    v1?: boolean;
 }
 
 // @public (undocumented)
@@ -949,6 +953,8 @@ export enum Stage {
     create = "create",
     // (undocumented)
     createEnv = "createEnv",
+    // (undocumented)
+    createV1 = "createV1",
     // (undocumented)
     debug = "debug",
     // (undocumented)
