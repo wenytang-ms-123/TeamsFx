@@ -34,7 +34,7 @@ export class CICDImpl {
       packageJson.devDependencies = {
         "@microsoft/teamsfx-cli": PluginCICD.TEAMSFX_CLI_VERSION,
       };
-      await fs.writeFile(packageJsonFile, JSON.stringify(packageJson));
+      await fs.writeJSON(packageJsonFile, packageJson, { spaces: 4 });
     } catch (error) {
       throw new InternalError(Messages.FailToReadWritePackageJson, error);
     }
