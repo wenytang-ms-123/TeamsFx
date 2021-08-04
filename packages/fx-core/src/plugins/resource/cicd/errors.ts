@@ -40,9 +40,13 @@ export class PluginError extends Error {
 }
 
 export class InternalError extends PluginError {
-  constructor(details: string) {
-    super(ErrorType.System, ErrorNames.INTERNAL_ERROR, details, [
-      Suggestions.RETRY_THE_CURRENT_STEP,
-    ]);
+  constructor(details: string, innerError?: Error) {
+    super(
+      ErrorType.System,
+      ErrorNames.INTERNAL_ERROR,
+      details,
+      [Suggestions.RETRY_THE_CURRENT_STEP],
+      innerError
+    );
   }
 }

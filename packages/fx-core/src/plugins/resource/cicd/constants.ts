@@ -36,6 +36,8 @@ export class Messages {
   public static readonly ScaffoldingCICD = "Scaffolding CICD workflows' files.";
   public static readonly SuccessfullyScaffoldedCICD =
     "Successfully scaffolded CICD workflows' files.";
+  public static readonly FailToReadWritePackageJson =
+    "Fail to read/write the project package.json file.";
 }
 
 export class PluginSolution {
@@ -51,8 +53,13 @@ export class PluginCICD {
   public static readonly GITHUB_WORKFLOW_FOLDER = "github-workflows";
   public static readonly GITHUB_CI_YML = "ci.yml";
   public static readonly GITHUB_CD_YML = "cd.yml";
+  public static readonly TEAMSFX_CLI_VERSION = "^0.3.1";
 }
 
 export class Suggestions {
   public static readonly RETRY_THE_CURRENT_STEP = "Please retry the current step.";
+}
+
+export class FileNames {
+  public static readonly PACKAGE_JSON = "package.json";
 }

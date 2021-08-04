@@ -70,7 +70,7 @@ export class CICDPlugin implements Plugin {
             name,
             ResultFactory.SystemError("Got an unhandled error", UnhandledErrorCode)
           );
-        return ResultFactory.SystemError(e.name, e.message, e);
+        return ResultFactory.SystemError(UnhandledErrorCode, e.message, e);
       }
     }
   }
