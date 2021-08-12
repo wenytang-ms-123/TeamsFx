@@ -208,7 +208,7 @@ describe("Deploy ARM Template to Azure", () => {
   "resourceBaseName": {
     "value": "{{SOLUTION__RESOURCE_BASE_NAME}}"
   },
-  "aadClientId": {
+  "m365AadClientId": {
     "value": "{{FX_RESOURCE_AAD_APP_FOR_TEAMS__CLIENTID}}"
   },
   "envValue": {
@@ -371,7 +371,7 @@ describe("Deploy ARM Template to Azure", () => {
         "resourceBaseName": {
           "value": "mytestapp${testResourceSuffix}"
         },
-        "aadClientId": {
+        "m365AadClientId": {
           "value": "${testClientId}"
         },
         "envValue": {

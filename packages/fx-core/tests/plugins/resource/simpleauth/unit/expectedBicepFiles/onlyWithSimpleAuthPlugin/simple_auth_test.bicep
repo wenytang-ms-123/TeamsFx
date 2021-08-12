@@ -2,9 +2,9 @@ param sku string
 param simpleAuthServerFarmsName string
 param simpleAuthWebAppName string
 param m365TenantId string
-param aadClientId string
+param m365AadClientId string
 @secure()
-param aadClientSecret string
+param m365AadClientSecret string
 param applicationIdUri string
 param oauthAuthorityHost string
 
@@ -48,8 +48,8 @@ resource simpleAuthWebAppSettings 'Microsoft.Web/sites/config@2018-02-01' = {
     AAD_METADATA_ADDRESS: aadMetadataAddress
     ALLOWED_APP_IDS: authorizedClientApplicationIds
     IDENTIFIER_URI: applicationIdUri
-    CLIENT_ID: aadClientId
-    CLIENT_SECRET: aadClientSecret
+    CLIENT_ID: m365AadClientId
+    CLIENT_SECRET: m365AadClientSecret
     OAUTH_AUTHORITY: oauthAuthority
   }
 }

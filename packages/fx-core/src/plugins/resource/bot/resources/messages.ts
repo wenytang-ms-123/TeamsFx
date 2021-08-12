@@ -58,6 +58,10 @@ export class Messages {
   public static readonly ProvisioningBot = "Provisioning bot.";
   public static readonly SuccessfullyProvisionedBot = "Successfully provisioned bot.";
 
+  public static readonly GeneratingArmTemplatesBot = "Generating ARM templates of bot.";
+  public static readonly SuccessfullyGenerateArmTemplatesBot =
+    "Successfully generating ARM templates of bot.";
+
   public static readonly PreDeployingBot = "Pre-deploying bot.";
   public static readonly DeployingBot = "Deploying bot.";
   public static readonly SuccessfullyDeployedBot = "Successfully deployed bot.";

@@ -1,6 +1,6 @@
 
-param aadClientId string
+param m365AadClientId string
 @secure()
-param aadClientSecret string
+param m365AadClientSecret string
 param m365TenantId string
 param m365OauthAuthorityHost string

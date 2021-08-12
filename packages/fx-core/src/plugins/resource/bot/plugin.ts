@@ -22,6 +22,7 @@ import {
   Links,
   IdentityConstants,
   AzureConstants,
+  PathInfo,
 } from "./constants";
 import { WayToRegisterBot } from "./enums/wayToRegisterBot";
 import { getZipDeployEndpoint } from "./utils/zipDeploy";
@@ -49,6 +50,9 @@ import { DeployMgr } from "./deployMgr";
 import { BotAuthCredential } from "./botAuthCredential";
 import { AzureOperations } from "./azureOps";
 import { TokenCredentialsBase } from "@azure/ms-rest-nodeauth";
+import { getStrings } from "../../../common";
+import path from "path";
+import { getTemplatesFolder } from "../../..";
 
 export class TeamsBotImpl {
   // Made config plubic, because expect the upper layer to fill inputs.
@@ -185,6 +189,64 @@ export class TeamsBotImpl {
 
     this.config.saveConfigIntoContext(context);
 
+    return ResultFactory.Success();
+  }
+
+  public async generateArmTemplates(context: PluginContext): Promise<FxResult> {
+    this.ctx = context;
+    await this.config.restoreConfigFromContext(context);
+    Logger.info(Messages.GeneratingArmTemplatesBot);
+
+    // Create and register progress bar for cleanup.
+    const handler = await ProgressBarFactory.newProgressBar(
+      ProgressBarConstants.GENERATE_ARM_TEMPLATES_TITLE,
+      ProgressBarConstants.GENERATE_ARM_TEMPLATES_STEPS_NUM,
+      this.ctx
+    );
+    await handler?.start(ProgressBarConstants.GENERATE_ARM_TEMPLATES_STEP_START);
+
+    const bicepTemplateDir = path.join(getTemplatesFolder(), PathInfo.BicepTemplateRelativeDir);
+
+    const moduleFilePath = path.join(bicepTemplateDir, PathInfo.moduleFileName);
+
+    const inputParameterOrchestrationFilePath = path.join(
+      bicepTemplateDir,
+      PathInfo.inputParameterOrchestrationFileName
+    );
+    const moduleOrchestrationFilePath = path.join(
+      bicepTemplateDir,
+      FrontendPathInfo.moduleOrchestrationFileName
+    );
+    const outputOrchestrationFilePath = path.join(
+      bicepTemplateDir,
+      FrontendPathInfo.outputOrchestrationFileName
+    );
+
+    const result: ScaffoldArmTemplateResult = {
+      Modules: {
+        frontendHostingProvision: {
+          Content: await fs.readFile(moduleFilePath, "utf-8"),
+        },
+      },
+      Orchestration: {
+        ParameterTemplate: {
+          Content: await fs.readFile(inputParameterOrchestrationFilePath, "utf-8"),
+        },
+        ModuleTemplate: {
+          Content: await fs.readFile(moduleOrchestrationFilePath, "utf-8"),
+          Outputs: {
+            storageName: FrontendOutputBicepSnippet.StorageName,
+            endpoint: FrontendOutputBicepSnippet.Endpoint,
+            domain: FrontendOutputBicepSnippet.Domain,
+          },
+        },
+        OutputTemplate: {
+          Content: await fs.readFile(outputOrchestrationFilePath, "utf-8"),
+        },
+      },
+    };
+
+    Logger.info(Messages.SuccessfullyGenerateArmTemplatesBot);
     return ResultFactory.Success();
   }
 
