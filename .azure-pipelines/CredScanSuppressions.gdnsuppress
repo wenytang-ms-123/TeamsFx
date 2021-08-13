@@ -133,6 +133,30 @@
         "createdDate": "2021-08-04 09:04:38Z",
         "expirationDate": null,
         "type": null
+      },
+      "test-helper": {
+        "target": "packages/sdk/test/helper.ts",
+        "memberOf": [
+          "default"
+        ],
+        "tool": "credscan",
+        "ruleId": "CSCAN-GENERAL0060",
+        "justification": null,
+        "createdDate": "2021-08-13 09:00:00Z",
+        "expirationDate": null,
+        "type": null
+      },
+      "localdebug-constants": {
+        "target": "packages/fx-core/src/plugins/resource/localdebug/constants.ts",
+        "memberOf": [
+          "default"
+        ],
+        "tool": "credscan",
+        "ruleId": "CSCAN-GENERAL0030",
+        "justification": null,
+        "createdDate": "2021-08-13 09:00:00Z",
+        "expirationDate": null,
+        "type": null
       }
     }
   }
