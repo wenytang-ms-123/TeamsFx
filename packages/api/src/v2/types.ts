@@ -3,13 +3,12 @@
 "use strict";
 
 import { UserInteraction } from "../qm/ui";
-import { EnvMeta, Inputs, ProjectSettings } from "../types";
+import { Inputs, ProjectSettings } from "../types";
 import { CryptoProvider, LogProvider, TelemetryReporter } from "../utils";
 
 export type PluginName = string;
 
 export interface Context {
-  envMeta: EnvMeta;
   userInteraction: UserInteraction;
   logProvider: LogProvider;
   telemetryReporter: TelemetryReporter;
@@ -33,7 +32,8 @@ export type SolutionInputs = {
   // default to East US for now
   location: string;
   teamsAppTenantId: string;
+  remoteTeamsAppId?: string;
 };
 
 export type ProvisionInputs = Inputs & SolutionInputs;
-export type DeploymentInputs = Inputs & SolutionInputs & { remoteTeamsAppId: string };
+export type DeploymentInputs = Inputs & SolutionInputs;

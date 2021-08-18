@@ -120,6 +120,7 @@ export interface ProjectSettings {
   version?: string;
   projectId: string;
   programmingLanguage?: string;
+  defaultFunctionName?: string;
   solutionSettings?: SolutionSettings;
 }
 
@@ -172,4 +173,5 @@ export interface Inputs extends Json {
 export interface ProjectConfig {
   settings?: ProjectSettings;
   config?: SolutionConfig;
+  localSettings?: LocalSettings;
 }
