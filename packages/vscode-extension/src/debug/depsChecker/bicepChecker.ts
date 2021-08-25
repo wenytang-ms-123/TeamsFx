@@ -6,7 +6,7 @@ import { ConfigFolderName } from "@microsoft/teamsfx-api";
 import * as fs from "fs-extra";
 import { cpUtils } from "./cpUtils";
 
-import { finished } from "stream";
+import { finished, pipeline, Readable, Writable } from "stream";
 import {
   defaultHelpLink,
   DepsCheckerEvent,
@@ -18,9 +18,10 @@ import {
 import { DepsCheckerError } from "./errors";
 
 export const BicepName = "Bicep";
-export const supportedVersions: Array<string> = ["v0.4"];
-export const installVersion = "";
+export const installVersion = "v0.4";
+export const supportedVersions: Array<string> = [installVersion];
 
+const displayBicepName = `${BicepName} (${installVersion})`;
 const timeout = 5 * 60 * 1000;
 
 export class BicepChecker implements IDepsChecker {
@@ -57,14 +58,14 @@ export class BicepChecker implements IDepsChecker {
   }
 
   public async isInstalled(): Promise<boolean> {
-    // always install private bicep even if global bicep exists.
-    if (this.isVersionSupported(await this.queryVersionSilently("bicep"))) {
+    const isGlobalBicepInstalled: boolean = await this.isBicepInstalled("bicep");
+    const isPrivateBicepInstalled: boolean = await this.isBicepInstalled(this.getBicepExecPath());
+
+    if (isGlobalBicepInstalled) {
       this._telemetry.sendEvent(DepsCheckerEvent.bicepAlreadyInstalled);
     }
-
-    const privateVersion = await this.queryVersionSilently(this.getBicepExecPath());
-    if (this.isVersionSupported(privateVersion)) {
-      // avoid missing this event
+    if (isPrivateBicepInstalled) {
+      // always install private bicep even if global bicep exists.
       this._telemetry.sendEvent(DepsCheckerEvent.bicepInstallCompleted);
       return true;
     }
@@ -97,7 +98,8 @@ export class BicepChecker implements IDepsChecker {
     try {
       await this._telemetry.sendEventWithDuration(
         DepsCheckerEvent.bicepInstallScriptCompleted,
-        async () => await this._adapter.runWithProgressIndicator(this.doInstallBicep)
+        async () =>
+          await this._adapter.runWithProgressIndicator(async () => await this.doInstallBicep())
       );
     } catch (err) {
       this._telemetry.sendSystemErrorEvent(
@@ -105,10 +107,15 @@ export class BicepChecker implements IDepsChecker {
         TelemtryMessages.failedToInstallBicep,
         err
       );
+      await this._logger.error(
+        `${Messages.failToInstallBicep
+          .split("@NameVersion")
+          .join(displayBicepName)}, error = '${err}'`
+      );
     }
   }
 
-  private async doInstallBicep() {
+  private async doInstallBicep(): Promise<void> {
     const response: AxiosResponse<Array<{ tag_name: string }>> = await this._axios.get(
       "https://api.github.com/repos/Azure/bicep/releases",
       { headers: { Accept: "application/vnd.github.v3+json" } }
@@ -129,14 +136,27 @@ export class BicepChecker implements IDepsChecker {
       {
         timeout: timeout,
         timeoutErrorMessage: "Failed to download bicep by http request timeout",
+        responseType: "stream",
       }
     );
-
     const bicepWriter = fs.createWriteStream(installDir);
-    axiosResponse.data.pipe(bicepWriter);
+    await this.writeBicepBits(bicepWriter, axiosResponse.data);
+    fs.chmodSync(installDir, 0o755);
+    try {
+      await fs.open(installDir, "w+");
+      await this._logger.error(`reopen file success`);
+    } catch (err) {
+      await this._logger.error(`reopen file failed, err = ${err}`);
+    }
+  }
 
-    finished(bicepWriter, (err?: NodeJS.ErrnoException | null) => {
-      if (err) throw err;
+  private async writeBicepBits(writer: Writable, reader: Readable): Promise<void> {
+    return new Promise((resolve: (value: void) => void, reject: (e: Error) => void): void => {
+      reader.pipe(writer);
+      finished(writer, (err?: NodeJS.ErrnoException | null) => {
+        if (err) reject(err);
+        else resolve();
+      });
     });
   }
 
@@ -152,6 +172,7 @@ export class BicepChecker implements IDepsChecker {
         TelemtryMessages.failedToValidateBicep,
         err
       );
+      await this._logger.error(`${TelemtryMessages.failedToValidateBicep}, error = ${err}`);
     }
 
     if (!isVersionSupported) {
@@ -165,34 +186,29 @@ export class BicepChecker implements IDepsChecker {
 
   private async handleInstallCompleted() {
     this._telemetry.sendEvent(DepsCheckerEvent.bicepInstallCompleted);
-    await this._logger.info(
-      Messages.finishInstallBicep.replace("@NameVersion", await this.getDisPlayNameVersion())
-    );
+    await this._logger.info(Messages.finishInstallBicep.replace("@NameVersion", displayBicepName));
   }
 
   private async handleInstallFailed(): Promise<void> {
     await this.cleanup();
     this._telemetry.sendEvent(DepsCheckerEvent.bicepInstallError);
     throw new DepsCheckerError(
-      Messages.failToInstallBicep.split("@NameVersion").join(await this.getDisPlayNameVersion()),
+      Messages.failToInstallBicep.split("@NameVersion").join(displayBicepName),
       defaultHelpLink
     );
-  }
-
-  private async getDisPlayNameVersion(): Promise<string> {
-    return `Bicep ${await this.queryVersionSilently(this.getBicepExecPath())}`;
   }
 
   private isVersionSupported(version: string): boolean {
     return supportedVersions.some((supported) => version.includes(supported));
   }
 
-  private async queryVersionSilently(path: string): Promise<string> {
+  private async isBicepInstalled(path: string): Promise<boolean> {
     try {
-      return this.queryVersion(path);
+      const version = await this.queryVersion(path);
+      return this.isVersionSupported(version);
     } catch (e) {
       // do nothing
-      return "";
+      return false;
     }
   }
 
@@ -226,7 +242,8 @@ export class BicepChecker implements IDepsChecker {
 
   private getBicepInstallDir(): string {
     // TODO: fix it after testing
-    return path.join(os.homedir(), `.${ConfigFolderName}`, "bin", "bicep のtestتست@#");
+    // return path.join(os.homedir(), `.${ConfigFolderName}`, "bin", "bicep のtestتست@#");
+    return path.join(os.homedir(), `.${ConfigFolderName}`, "bin", "bicep test");
   }
 
   private async queryVersion(path: string): Promise<string> {
