@@ -24,11 +24,16 @@ import {
   Inputs,
   Platform,
   Colors,
+  PublishProfilesFolderName,
+  EnvNamePlaceholder,
+  ProjectSettingsFileName,
+  EnvProfileFileNameTemplate,
 } from "@microsoft/teamsfx-api";
 
 import { ConfigNotFoundError, InvalidEnvFile, ReadFileError } from "./error";
 import AzureAccountManager from "./commonlib/azureLogin";
 import { FeatureFlags } from "./constants";
+import { isMultiEnvEnabled } from "@microsoft/teamsfx-core";
 
 type Json = { [_: string]: any };
 
@@ -114,19 +119,38 @@ export async function sleep(ms: number): Promise<void> {
 }
 
 export function getActiveEnv(): string {
-  return "default";
+  if (isMultiEnvEnabled()) {
+    // TODO: support user customization
+    return "dev";
+  } else {
+    return "default";
+  }
 }
 
-export function getConfigPath(projectFolder: string, fileName: string): string {
-  return path.resolve(projectFolder, `.${ConfigFolderName}`, fileName);
+export function getConfigPath(projectFolder: string, filePath: string): string {
+  return path.resolve(projectFolder, `.${ConfigFolderName}`, filePath);
 }
 
 export function getEnvFilePath(projectFolder: string) {
-  return getConfigPath(projectFolder, `env.${getActiveEnv()}.json`);
+  if (isMultiEnvEnabled()) {
+    return getConfigPath(
+      projectFolder,
+      path.join(
+        PublishProfilesFolderName,
+        EnvProfileFileNameTemplate.replace(EnvNamePlaceholder, getActiveEnv())
+      )
+    );
+  } else {
+    return getConfigPath(projectFolder, `env.${getActiveEnv()}.json`);
+  }
 }
 
 export function getSettingsFilePath(projectFolder: string) {
-  return getConfigPath(projectFolder, "settings.json");
+  if (isMultiEnvEnabled()) {
+    return getConfigPath(projectFolder, "settings.json");
+  } else {
+    return getConfigPath(projectFolder, ProjectSettingsFileName);
+  }
 }
 
 export async function readEnvJsonFile(projectFolder: string): Promise<Result<Json, FxError>> {
