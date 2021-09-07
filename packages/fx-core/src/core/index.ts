@@ -63,6 +63,7 @@ import { QuestionModelMW } from "./middleware/questionModel";
 import { ProjectSettingsWriterMW } from "./middleware/projectSettingsWriter";
 import { ProjectSettingsLoaderMW, newSolutionContext } from "./middleware/projectSettingsLoader";
 import { ConcurrentLockerMW } from "./middleware/concurrentLocker";
+import { ProjectMigratorMW } from "./middleware/projectMigrator";
 import {
   FetchSampleError,
   FunctionRouterError,
@@ -428,6 +429,7 @@ export class FxCore implements Core {
   @hooks([
     ErrorHandlerMW,
     ConcurrentLockerMW,
+    ProjectMigratorMW,
     ProjectSettingsLoaderMW,
     EnvInfoLoaderMW(isMultiEnvEnabled()),
     SolutionLoaderMW(defaultSolutionLoader),
@@ -444,6 +446,7 @@ export class FxCore implements Core {
   @hooks([
     ErrorHandlerMW,
     ConcurrentLockerMW,
+    ProjectMigratorMW,
     ProjectSettingsLoaderMW,
     EnvInfoLoaderMW(isMultiEnvEnabled()),
     SolutionLoaderMW(defaultSolutionLoader),
@@ -460,6 +463,7 @@ export class FxCore implements Core {
   @hooks([
     ErrorHandlerMW,
     ConcurrentLockerMW,
+    ProjectMigratorMW,
     ProjectUpgraderMW,
     ProjectSettingsLoaderMW,
     EnvInfoLoaderMW(false),
@@ -488,6 +492,7 @@ export class FxCore implements Core {
   @hooks([
     ErrorHandlerMW,
     ConcurrentLockerMW,
+    ProjectMigratorMW,
     ProjectSettingsLoaderMW,
     EnvInfoLoaderMW(isMultiEnvEnabled()),
     SolutionLoaderMW(defaultSolutionLoader),
@@ -504,6 +509,7 @@ export class FxCore implements Core {
   @hooks([
     ErrorHandlerMW,
     ConcurrentLockerMW,
+    ProjectMigratorMW,
     ProjectSettingsLoaderMW,
     EnvInfoLoaderMW(isMultiEnvEnabled()),
     LocalSettingsLoaderMW,
@@ -533,6 +539,7 @@ export class FxCore implements Core {
 
   @hooks([
     ErrorHandlerMW,
+    ProjectMigratorMW,
     ProjectSettingsLoaderMW,
     EnvInfoLoaderMW(false),
     SolutionLoaderMW(defaultSolutionLoader),
@@ -562,6 +569,7 @@ export class FxCore implements Core {
 
   @hooks([
     ErrorHandlerMW,
+    ProjectMigratorMW,
     ProjectSettingsLoaderMW,
     EnvInfoLoaderMW(false),
     SolutionLoaderMW(defaultSolutionLoader),
@@ -586,6 +594,7 @@ export class FxCore implements Core {
 
   @hooks([
     ErrorHandlerMW,
+    ProjectMigratorMW,
     ProjectSettingsLoaderMW,
     EnvInfoLoaderMW(isMultiEnvEnabled()),
     LocalSettingsLoaderMW,
@@ -604,6 +613,7 @@ export class FxCore implements Core {
 
   @hooks([
     ErrorHandlerMW,
+    ProjectMigratorMW,
     ProjectSettingsLoaderMW,
     EnvInfoLoaderMW(false),
     ContextInjecterMW,
@@ -624,6 +634,7 @@ export class FxCore implements Core {
   @hooks([
     ErrorHandlerMW,
     ConcurrentLockerMW,
+    ProjectMigratorMW,
     ProjectSettingsLoaderMW,
     EnvInfoLoaderMW(isMultiEnvEnabled()),
     SolutionLoaderMW(defaultSolutionLoader),
@@ -640,6 +651,7 @@ export class FxCore implements Core {
   @hooks([
     ErrorHandlerMW,
     ConcurrentLockerMW,
+    ProjectMigratorMW,
     ProjectSettingsLoaderMW,
     EnvInfoLoaderMW(isMultiEnvEnabled()),
     SolutionLoaderMW(defaultSolutionLoader),
@@ -656,6 +668,7 @@ export class FxCore implements Core {
   @hooks([
     ErrorHandlerMW,
     ConcurrentLockerMW,
+    ProjectMigratorMW,
     ProjectSettingsLoaderMW,
     EnvInfoLoaderMW(isMultiEnvEnabled()),
     SolutionLoaderMW(defaultSolutionLoader),
@@ -789,7 +802,7 @@ export class FxCore implements Core {
             description: "",
             author: "",
             scripts: {
-              test: 'echo "Error: no test specified" && exit 1',
+              test: "echo \"Error: no test specified\" && exit 1",
             },
             devDependencies: {
               "@microsoft/teamsfx-cli": "0.*",
