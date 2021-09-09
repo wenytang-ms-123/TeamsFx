@@ -34,3 +34,12 @@ export async function readJson(filePath: string): Promise<any> {
   sendTelemetryErrorEvent(Component.core, TelemetryEvent.ReadJson, fxError);
   throw fxError;
 }
+
+export async function checkFileExist(filePath: string): Promise<boolean> {
+  try {
+    await fs.stat(filePath);
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
