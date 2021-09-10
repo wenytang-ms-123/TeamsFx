@@ -407,7 +407,7 @@ describe("Middleware", () => {
         }
       }
       hooks(MyClass, {
-        myMethod: [SolutionLoaderMW(), ContextInjectorMW],
+        myMethod: [SolutionLoaderMW, ContextInjectorMW],
       });
       const my = new MyClass();
       const inputs: Inputs = { platform: Platform.VSCode };
@@ -808,12 +808,12 @@ describe("Middleware", () => {
         }
       }
       hooks(MockCore, {
-        createProject: [SolutionLoaderMW(), MockContextLoaderMW, QuestionModelMW],
-        provisionResources: [SolutionLoaderMW(), MockContextLoaderMW, QuestionModelMW],
-        deployArtifacts: [SolutionLoaderMW(), MockContextLoaderMW, QuestionModelMW],
-        localDebug: [SolutionLoaderMW(), MockContextLoaderMW, QuestionModelMW],
-        publishApplication: [SolutionLoaderMW(), MockContextLoaderMW, QuestionModelMW],
-        executeUserTask: [SolutionLoaderMW(), MockContextLoaderMW, QuestionModelMW],
+        createProject: [SolutionLoaderMW, MockContextLoaderMW, QuestionModelMW],
+        provisionResources: [SolutionLoaderMW, MockContextLoaderMW, QuestionModelMW],
+        deployArtifacts: [SolutionLoaderMW, MockContextLoaderMW, QuestionModelMW],
+        localDebug: [SolutionLoaderMW, MockContextLoaderMW, QuestionModelMW],
+        publishApplication: [SolutionLoaderMW, MockContextLoaderMW, QuestionModelMW],
+        executeUserTask: [SolutionLoaderMW, MockContextLoaderMW, QuestionModelMW],
       });
       const my = new MockCore();
 
@@ -906,22 +906,22 @@ describe("Middleware", () => {
         }
       }
       hooks(MockCore, {
-        createProject: [ErrorHandlerMW, SolutionLoaderMW(), MockContextLoaderMW, QuestionModelMW],
+        createProject: [ErrorHandlerMW, SolutionLoaderMW, MockContextLoaderMW, QuestionModelMW],
         provisionResources: [
           ErrorHandlerMW,
-          SolutionLoaderMW(),
+          SolutionLoaderMW,
           MockContextLoaderMW,
           QuestionModelMW,
         ],
-        deployArtifacts: [ErrorHandlerMW, SolutionLoaderMW(), MockContextLoaderMW, QuestionModelMW],
-        localDebug: [ErrorHandlerMW, SolutionLoaderMW(), MockContextLoaderMW, QuestionModelMW],
+        deployArtifacts: [ErrorHandlerMW, SolutionLoaderMW, MockContextLoaderMW, QuestionModelMW],
+        localDebug: [ErrorHandlerMW, SolutionLoaderMW, MockContextLoaderMW, QuestionModelMW],
         publishApplication: [
           ErrorHandlerMW,
-          SolutionLoaderMW(),
+          SolutionLoaderMW,
           MockContextLoaderMW,
           QuestionModelMW,
         ],
-        executeUserTask: [ErrorHandlerMW, SolutionLoaderMW(), MockContextLoaderMW, QuestionModelMW],
+        executeUserTask: [ErrorHandlerMW, SolutionLoaderMW, MockContextLoaderMW, QuestionModelMW],
       });
       const my = new MockCore();
 

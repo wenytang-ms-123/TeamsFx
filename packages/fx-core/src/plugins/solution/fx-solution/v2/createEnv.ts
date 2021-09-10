@@ -17,11 +17,11 @@ import { isAzureProject } from "./utils";
 export async function createEnv(ctx: v2.Context, inputs: Inputs): Promise<Result<Void, FxError>> {
   if (
     isArmSupportEnabled() &&
-    isAzureProject(ctx.projectSettings.solutionSettings as AzureSolutionSettings)
+    isAzureProject(ctx.projectSetting.solutionSettings as AzureSolutionSettings)
   ) {
     const solutionContext: SolutionContext = {
       envInfo: newEnvInfo(inputs.targetEnvName),
-      root: inputs.projectPath,
+      root: inputs.projectPath!,
       ...ctx,
       answers: inputs,
     };

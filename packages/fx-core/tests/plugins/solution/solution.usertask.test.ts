@@ -23,6 +23,7 @@ import {
   mockPublishThatAlwaysSucceed,
   mockV2PublishThatAlwaysSucceed,
   mockScaffoldCodeThatAlwaysSucceeds,
+  MockedAzureAccountProvider,
 } from "./util";
 import _ from "lodash";
 import {
@@ -50,6 +51,7 @@ import "../../../src/plugins/resource/bot/v2";
 import { AppStudioPlugin, newEnvInfo } from "../../../src";
 import fs from "fs-extra";
 import { ProgrammingLanguage } from "../../../src/plugins/resource/bot/enums/programmingLanguage";
+import { MockGraphTokenProvider } from "../../core/utils";
 
 chai.use(chaiAsPromised);
 const expect = chai.expect;
@@ -143,7 +145,7 @@ describe("V2 implementation", () => {
       },
     };
     const mockedCtx = new MockedV2Context(projectSettings);
-    const mockedProvider = new MockedAppStudioProvider();
+    const mockedProvider = { azureAccountProvider: new MockedAzureAccountProvider(),  graphTokenProvider: new MockGraphTokenProvider(), appStudioToken: new MockedAppStudioProvider()};
     const mockedInputs: Inputs = {
       platform: Platform.VSCode,
     };
@@ -170,7 +172,7 @@ describe("V2 implementation", () => {
       },
     };
     const mockedCtx = new MockedV2Context(projectSettings);
-    const mockedProvider = new MockedAppStudioProvider();
+    const mockedProvider = { azureAccountProvider: new MockedAzureAccountProvider(),  graphTokenProvider: new MockGraphTokenProvider(), appStudioToken: new MockedAppStudioProvider()};
     const mockedInputs: Inputs = {
       platform: Platform.VSCode,
     };
@@ -197,7 +199,7 @@ describe("V2 implementation", () => {
       },
     };
     const mockedCtx = new MockedV2Context(projectSettings);
-    const mockedProvider = new MockedAppStudioProvider();
+    const mockedProvider = { azureAccountProvider: new MockedAzureAccountProvider(),  graphTokenProvider: new MockGraphTokenProvider(), appStudioToken: new MockedAppStudioProvider()};
     const mockedInputs: Inputs = {
       platform: Platform.VSCode,
     };
@@ -225,7 +227,7 @@ describe("V2 implementation", () => {
       },
     };
     const mockedCtx = new MockedV2Context(projectSettings);
-    const mockedProvider = new MockedAppStudioProvider();
+    const mockedProvider = { azureAccountProvider: new MockedAzureAccountProvider(),  graphTokenProvider: new MockGraphTokenProvider(), appStudioToken: new MockedAppStudioProvider()};
     const mockedInputs: Inputs = {
       platform: Platform.VSCode,
     };
@@ -255,7 +257,7 @@ describe("V2 implementation", () => {
       },
     };
     const mockedCtx = new MockedV2Context(projectSettings);
-    const mockedProvider = new MockedAppStudioProvider();
+    const mockedProvider = { azureAccountProvider: new MockedAzureAccountProvider(),  graphTokenProvider: new MockGraphTokenProvider(), appStudioToken: new MockedAppStudioProvider()};
     const mockedInputs: Inputs = {
       platform: Platform.VSCode,
     };
@@ -288,7 +290,7 @@ describe("V2 implementation", () => {
       },
     };
     const mockedCtx = new MockedV2Context(projectSettings);
-    const mockedProvider = new MockedAppStudioProvider();
+    const mockedProvider = { azureAccountProvider: new MockedAzureAccountProvider(),  graphTokenProvider: new MockGraphTokenProvider(), appStudioToken: new MockedAppStudioProvider()};
     const mockedInputs: Inputs = {
       platform: Platform.VSCode,
     };
@@ -317,7 +319,7 @@ describe("V2 implementation", () => {
       },
     };
     const mockedCtx = new MockedV2Context(projectSettings);
-    const mockedProvider = new MockedAppStudioProvider();
+    const mockedProvider = { azureAccountProvider: new MockedAzureAccountProvider(),  graphTokenProvider: new MockGraphTokenProvider(), appStudioToken: new MockedAppStudioProvider()};
     const mockedInputs: Inputs = {
       platform: Platform.VSCode,
     };
@@ -350,7 +352,7 @@ describe("V2 implementation", () => {
     };
     const mockedCtx = new MockedV2Context(projectSettings);
     mockedCtx.projectSetting.programmingLanguage = ProgrammingLanguage.JavaScript;
-    const mockedProvider = new MockedAppStudioProvider();
+    const mockedProvider = { azureAccountProvider: new MockedAzureAccountProvider(),  graphTokenProvider: new MockGraphTokenProvider(), appStudioToken: new MockedAppStudioProvider()};
     const mockedInputs: Inputs = {
       platform: Platform.VSCode,
     };
@@ -388,7 +390,7 @@ describe("V2 implementation", () => {
 
     it("should return error for non-vs platform", async () => {
       const mockedCtx = new MockedV2Context(projectSettings);
-      const mockedProvider = new MockedAppStudioProvider();
+      const mockedProvider = { azureAccountProvider: new MockedAzureAccountProvider(),  graphTokenProvider: new MockGraphTokenProvider(), appStudioToken: new MockedAppStudioProvider()};
       const mockedInputs: Inputs = {
         platform: Platform.VSCode,
       };
@@ -424,7 +426,7 @@ describe("V2 implementation", () => {
 
       it("should return ok", async () => {
         const mockedCtx = new MockedV2Context(projectSettings);
-        const mockedProvider = new MockedAppStudioProvider();
+        const mockedProvider = { azureAccountProvider: new MockedAzureAccountProvider(),  graphTokenProvider: new MockGraphTokenProvider(), appStudioToken: new MockedAppStudioProvider()};
         const mockedInputs: Inputs = {
           platform: Platform.VS,
         };

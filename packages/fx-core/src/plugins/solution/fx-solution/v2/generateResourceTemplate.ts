@@ -32,7 +32,7 @@ export async function generateResourceTemplate(
   const armResult = await generateArmTemplate(legacyContext);
 
   // move generation of parameter json from core to here
-  if (isAzureProject(ctx.projectSettings.solutionSettings as AzureSolutionSettings)) {
+  if (isAzureProject(ctx.projectSetting.solutionSettings as AzureSolutionSettings)) {
     await getParameterJson(legacyContext);
   }
 

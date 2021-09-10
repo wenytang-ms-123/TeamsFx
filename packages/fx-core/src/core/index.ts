@@ -887,7 +887,7 @@ export class FxCore implements Core {
     const appName = projectSettings.appName;
     const newEnvConfig = environmentManager.newEnvConfigData(appName);
     const writeEnvResult = await environmentManager.writeEnvConfig(
-      inputs.projectPath,
+      inputs.projectPath!,
       newEnvConfig,
       targetEnvName
     );
@@ -910,11 +910,11 @@ export class FxCore implements Core {
     // copy env config file
     const targetEnvConfigFilePath = environmentManager.getEnvConfigPath(
       targetEnvName,
-      inputs.projectPath
+      inputs.projectPath!
     );
     const sourceEnvConfigFilePath = environmentManager.getEnvConfigPath(
       sourceEnvName,
-      inputs.projectPath
+      inputs.projectPath!
     );
 
     try {
@@ -968,7 +968,7 @@ export class FxCore implements Core {
       return ok(Void);
     }
 
-    const envConfigs = await environmentManager.listEnvConfigs(inputs.projectPath);
+    const envConfigs = await environmentManager.listEnvConfigs(inputs.projectPath!);
 
     if (envConfigs.isErr()) {
       return envConfigs;
@@ -1202,7 +1202,7 @@ export function createV2Context(
     permissionRequestProvider: !inputs.projectPath
       ? undefined
       : new PermissionRequestFileProvider(inputs.projectPath),
-    projectSettings: projectSettings,
+    projectSetting: projectSettings,
   };
   return context;
 }
