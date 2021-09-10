@@ -14,17 +14,13 @@ import * as os from "os";
 import CLILogProvider from "../commonlib/log";
 import { WorkspaceNotSupported } from "./preview/errors";
 import HelpParamGenerator from "../helpParamGenerator";
-import activate from "../activate";
-import CliTelemetry from "../telemetry/cliTelemetry";
-import { TelemetryEvent } from "../telemetry/cliTelemetryEvents";
-import { getSystemInputs, isWorkspaceSupported } from "../utils";
+import { isWorkspaceSupported } from "../utils";
 
 export default class Env extends YargsCommand {
   public readonly commandHead = `env`;
   public readonly command = `${this.commandHead} [action]`;
   public readonly description = "Manage environments.";
-
-  public readonly subCommands: YargsCommand[] = [new EnvList()];
+  public readonly subCommands = [new EnvList()];
 
   public builder(yargs: Argv): Argv<any> {
     yargs.options("action", {

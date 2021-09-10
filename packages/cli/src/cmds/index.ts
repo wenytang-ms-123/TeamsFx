@@ -20,7 +20,7 @@ import Config from "./config";
 import Preview from "./preview/preview";
 import { isRemoteCollaborationEnabled } from "../utils";
 import Permission from "./permission";
-import { isMultiEnvEnabled } from "@microsoft/teamsfx-core";
+import { CoreSource, isMultiEnvEnabled } from "@microsoft/teamsfx-core";
 import Env from "./env";
 
 export const commands: YargsCommand[] = [
