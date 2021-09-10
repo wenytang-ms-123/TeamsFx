@@ -5,8 +5,10 @@ import {
   AppPackageFolderName,
   ConfigFolderName,
   EnvConfig,
+  PluginContext,
   InputConfigsFolderName,
   Inputs,
+  err,
   ProjectSettingsFileName,
   PublishProfilesFolderName,
   TeamsAppManifest,
@@ -24,6 +26,9 @@ import {
   isArmSupportEnabled,
   isBicepEnvCheckerEnabled,
 } from "../../common/tools";
+import { loadProjectSettings } from "./projectSettingsLoader";
+import { generateArmTemplate } from "../../plugins/solution/fx-solution/arm";
+import { loadSolutionContext } from "./envInfoLoader";
 
 const MigrationMessage = (stage: string) =>
   `In order to proceed with ${stage}, we will update your project code to use the latest Teams Toolkit. We recommend to initialize your workspace with git for better tracking file changes.`;
@@ -205,4 +210,61 @@ function preCheckEnvEnabled() {
   return false;
 }
 
-async function migrateArm(ctx: CoreHookContext) {}
+async function migrateArm(ctx: CoreHookContext) {
+  await generateArmTempaltesFiles(ctx);
+}
+
+async function generateArmTempaltesFiles(ctx: CoreHookContext) {
+  // copy ctx
+  const fakeCtx: CoreHookContext = { arguments: ctx.arguments };
+
+  const inputs = ctx.arguments[ctx.arguments.length - 1] as Inputs;
+  if (!inputs.projectPath) {
+    throw NoProjectOpenedError();
+  }
+  const core = ctx.self as FxCore;
+
+  const fx = path.join(inputs.projectPath, `.${ConfigFolderName}`);
+  const fxConfig = path.join(fx, InputConfigsFolderName);
+  const templateAzure = path.join(inputs.projectPath, "templates", "azure");
+  await fs.ensureDir(fx);
+  await fs.ensureDir(fxConfig);
+  await fs.ensureDir(templateAzure);
+  // load local settings.json
+  const loadRes = await loadProjectSettings(inputs);
+  if (loadRes.isErr()) {
+    ctx.result = err(loadRes.error);
+    return;
+  }
+  const [projectSettings, projectIdMissing] = loadRes.value;
+  fakeCtx.projectSettings = projectSettings;
+  fakeCtx.projectIdMissing = projectIdMissing;
+
+  // load envinfo env.default.json
+  const targetEnvName = "default";
+  const result = await loadSolutionContext(
+    core.tools,
+    inputs,
+    fakeCtx.projectSettings,
+    fakeCtx.projectIdMissing,
+    targetEnvName,
+    inputs.ignoreEnvInfo
+  );
+  if (result.isErr()) {
+    console.log("error!!!!!!!!!");
+    return;
+  }
+  fakeCtx.solutionContext = result.value;
+  // generate arm templates
+  try {
+    await generateArmTemplate(fakeCtx.solutionContext!);
+  } catch (error) {
+    return error;
+  }
+  if (await checkFileExist(path.join(templateAzure, "parameters.template.json"))) {
+    await fs.copy(
+      path.join(templateAzure, "parameters.template.json"),
+      path.join(fxConfig, "azure.parameters.dev.json")
+    );
+  }
+}
