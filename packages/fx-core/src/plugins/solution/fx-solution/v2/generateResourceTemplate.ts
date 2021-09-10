@@ -1,8 +1,18 @@
-import { v2, Inputs, FxError, Result, err, returnSystemError, Json } from "@microsoft/teamsfx-api";
+import {
+  v2,
+  Inputs,
+  FxError,
+  Result,
+  err,
+  returnSystemError,
+  Json,
+  AzureSolutionSettings,
+} from "@microsoft/teamsfx-api";
 import { isArmSupportEnabled } from "../../../../common/tools";
-import { generateArmTemplate } from "../arm";
+import { generateArmTemplate, getParameterJson } from "../arm";
 import { SolutionError } from "../constants";
 import { ScaffoldingContextAdapter } from "./adaptor";
+import { isAzureProject } from "./utils";
 
 export async function generateResourceTemplate(
   ctx: v2.Context,
@@ -20,5 +30,11 @@ export async function generateResourceTemplate(
   const legacyContext = new ScaffoldingContextAdapter([ctx, inputs]);
   // todo(yefuwang): replace generateArmTemplate when v2 implementation is ready.
   const armResult = await generateArmTemplate(legacyContext);
+
+  // move generation of parameter json from core to here
+  if (isAzureProject(ctx.projectSettings.solutionSettings as AzureSolutionSettings)) {
+    await getParameterJson(legacyContext);
+  }
+
   return armResult;
 }

@@ -17,9 +17,9 @@ export interface Context {
   userInteraction: UserInteraction;
   logProvider: LogProvider;
   telemetryReporter: TelemetryReporter;
-  cryptoProvider: CryptoProvider;
   projectSetting: ProjectSettings;
-  permissionRequestProvider: PermissionRequestProvider;
+  cryptoProvider?: CryptoProvider;
+  permissionRequestProvider?: PermissionRequestProvider;
 }
 
 export interface LocalSettings extends Json {

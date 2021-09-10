@@ -50,24 +50,22 @@ export const ProjectSettingsLoaderMW: Middleware = async (
       ctx.result = err(PathNotExistError(inputs.projectPath));
       return;
     }
-    const loadRes = await loadProjectSettings(inputs);
+    const loadRes = await loadProjectSettings(ctx.self as FxCore, inputs);
     if (loadRes.isErr()) {
       ctx.result = err(loadRes.error);
       return;
     }
 
-    const [projectSettings, projectIdMissing] = loadRes.value;
+    const projectSettings = loadRes.value;
 
     const validRes = validateSettings(projectSettings);
     if (validRes) {
       ctx.result = err(InvalidProjectError(validRes));
       return;
     }
-
     ctx.projectSettings = projectSettings;
-    ctx.projectIdMissing = projectIdMissing;
     if (isV2()) {
-      ctx.contextV2 = createV2Context(ctx.self as FxCore, projectSettings);
+      ctx.contextV2 = createV2Context(ctx.self as FxCore, projectSettings, inputs);
     }
   }
 
@@ -75,8 +73,9 @@ export const ProjectSettingsLoaderMW: Middleware = async (
 };
 
 export async function loadProjectSettings(
+  core: FxCore,
   inputs: Inputs
-): Promise<Result<[ProjectSettings, boolean], FxError>> {
+): Promise<Result<ProjectSettings, FxError>> {
   try {
     if (!inputs.projectPath) {
       return err(NoProjectOpenedError());
@@ -87,10 +86,10 @@ export async function loadProjectSettings(
       ? path.resolve(confFolderPath, InputConfigsFolderName, ProjectSettingsFileName)
       : path.resolve(confFolderPath, "settings.json");
     const projectSettings: ProjectSettings = await readJson(settingsFile);
-    let projectIdMissing = false;
     if (!projectSettings.projectId) {
       projectSettings.projectId = uuid.v4();
-      projectIdMissing = true;
+    } else {
+      core.tools.cryptoProvider = new LocalCrypto(projectSettings.projectId);
     }
     if (
       projectSettings.solutionSettings &&
@@ -100,7 +99,7 @@ export async function loadProjectSettings(
       projectSettings.solutionSettings.activeResourcePlugins.push(PluginNames.APPST);
     }
 
-    return ok([projectSettings, projectIdMissing]);
+    return ok(projectSettings);
   } catch (e) {
     return err(ReadFileError(e));
   }

@@ -91,7 +91,6 @@ export function EnvInfoLoaderMW(isMultiEnvEnabled: boolean): Middleware {
         core.tools,
         inputs,
         ctx.projectSettings,
-        ctx.projectIdMissing,
         targetEnvName,
         inputs.ignoreEnvInfo
       );
@@ -121,7 +120,6 @@ export async function loadSolutionContext(
   tools: Tools,
   inputs: Inputs,
   projectSettings: ProjectSettings,
-  projectIdMissing?: boolean,
   targetEnvName?: string,
   ignoreEnvInfo = false
 ): Promise<Result<SolutionContext, FxError>> {
@@ -135,7 +133,7 @@ export async function loadSolutionContext(
   const envDataResult = await environmentManager.loadEnvInfo(
     inputs.projectPath,
     targetEnvName,
-    projectIdMissing ? undefined : cryptoProvider
+    tools.cryptoProvider
   );
 
   let envInfo: EnvInfo;
