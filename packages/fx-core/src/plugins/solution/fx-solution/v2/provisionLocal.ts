@@ -6,9 +6,8 @@ import {
   ok,
   err,
   TokenProvider,
-  returnSystemError,
-  Void,
   Json,
+  SystemError,
 } from "@microsoft/teamsfx-api";
 import { executeConcurrently } from "./executor";
 import {
@@ -71,9 +70,8 @@ export async function provisionLocalResource(
     }
   } else {
     return err(
-      returnSystemError(
-        new Error("AAD plugin not selected or executeUserTask is undefined"),
-        "Solution",
+      new SystemError(
+        "AAD plugin not selected or executeUserTask is undefined",
         SolutionError.InternelError
       )
     );

@@ -32,10 +32,10 @@ import {
   LogLevel,
   UserCancelError,
   TaskConfig,
-  assembleError,
   UserInteraction,
   Colors,
   IProgressHandler,
+  SystemError,
 } from "@microsoft/teamsfx-api";
 
 import CLILogProvider from "./commonlib/log";
@@ -562,7 +562,7 @@ export class CLIUserInteraction implements UserInteraction {
           resolve(v);
         })
         .catch((e) => {
-          resolve(err(assembleError(e)));
+          resolve(err(new SystemError({source: "UI", error: e})));
         });
       let current;
       if (showProgress) {
@@ -586,7 +586,7 @@ export class CLIUserInteraction implements UserInteraction {
           current = task.current ? task.current : 0;
         } while (current < total && !task.isCanceled);
       }
-      if (task.isCanceled) resolve(err(UserCancelError));
+      if (task.isCanceled) resolve(err(new UserCancelError()));
     });
   }
 }

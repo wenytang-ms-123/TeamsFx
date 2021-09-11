@@ -5,11 +5,11 @@ import {
   Result,
   ok,
   err,
-  returnUserError,
   AppStudioTokenProvider,
   Void,
   EnvConfig,
   Json,
+  UserError,
 } from "@microsoft/teamsfx-api";
 import { getStrings } from "../../../../common/tools";
 import { executeConcurrently } from "./executor";
@@ -31,11 +31,9 @@ export async function publishApplication(
 
   if (inAzureProject && !provisioned) {
     return err(
-      returnUserError(
-        new Error(
-          util.format(getStrings().solution.NotProvisionedNotice, ctx.projectSetting.appName)
-        ),
-        "Solution",
+      new UserError(
+        "Solution", 
+        util.format(getStrings().solution.NotProvisionedNotice, ctx.projectSetting.appName),
         SolutionError.CannotDeployBeforeProvision
       )
     );

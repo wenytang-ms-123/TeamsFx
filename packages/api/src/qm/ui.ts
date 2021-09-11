@@ -361,7 +361,7 @@ export class GroupOfTasks<T> implements RunnableTask<Result<T, FxError>[]> {
         this.current = 0;
         for (let i = 0; i < this.tasks.length; ++i) {
           if (this.isCanceled === true) {
-            resolve(err(UserCancelError));
+            resolve(err(new UserCancelError()));
             return;
           }
           const task = this.tasks[i];

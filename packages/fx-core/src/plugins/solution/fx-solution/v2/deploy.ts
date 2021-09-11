@@ -6,7 +6,7 @@ import {
   Json,
   ok,
   Result,
-  returnUserError,
+  UserError,
   v2,
   Void,
 } from "@microsoft/teamsfx-api";
@@ -18,7 +18,6 @@ import { GLOBAL_CONFIG, SolutionError, SOLUTION_PROVISION_SUCCEEDED } from "../c
 import { AzureSolutionQuestionNames } from "../question";
 import { executeConcurrently, NamedThunk } from "./executor";
 import {
-  combineRecords,
   extractSolutionInputs,
   getAzureSolutionSettings,
   getSelectedPlugins,
@@ -36,11 +35,9 @@ export async function deploy(
 
   if (inAzureProject && !provisioned) {
     return err(
-      returnUserError(
-        new Error(
-          util.format(getStrings().solution.NotProvisionedNotice, ctx.projectSetting.appName)
-        ),
+      new UserError(
         "Solution",
+        util.format(getStrings().solution.NotProvisionedNotice, ctx.projectSetting.appName),
         SolutionError.CannotDeployBeforeProvision
       )
     );
@@ -49,9 +46,9 @@ export async function deploy(
   const optionsToDeploy = inputs[AzureSolutionQuestionNames.PluginSelectionDeploy] as string[];
   if (optionsToDeploy === undefined || optionsToDeploy.length === 0) {
     return err(
-      returnUserError(
-        new Error(`No plugin selected`),
+      new UserError(
         "Solution",
+        `No plugin selected`,
         SolutionError.NoResourcePluginSelected
       )
     );

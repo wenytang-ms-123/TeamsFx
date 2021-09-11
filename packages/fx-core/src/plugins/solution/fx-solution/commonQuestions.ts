@@ -4,8 +4,6 @@
 import {
   ok,
   err,
-  returnSystemError,
-  returnUserError,
   FxError,
   Result,
   SolutionConfig,
@@ -20,6 +18,9 @@ import {
   LogProvider,
   EnvConfigFileNameTemplate,
   EnvNamePlaceholder,
+  UndefinedError,
+  UserError,
+  SystemError,
 } from "@microsoft/teamsfx-api";
 import { GLOBAL_CONFIG, LOCATION, RESOURCE_GROUP_NAME, SolutionError } from "./constants";
 import { v4 as uuidv4 } from "uuid";
@@ -74,11 +75,7 @@ export async function checkSubscription(
 ): Promise<Result<SubscriptionInfo, FxError>> {
   if (ctx.azureAccountProvider === undefined) {
     return err(
-      returnSystemError(
-        new Error("azureAccountProvider is undefined"),
-        "Solution",
-        SolutionError.InternelError
-      )
+      new UndefinedError("Solution", "azureAccountProvider is undefined")
     );
   }
 
@@ -96,14 +93,12 @@ export async function checkSubscription(
   const targetSubInfo = subscriptions.find((item) => item.subscriptionId === subscriptionId);
   if (!targetSubInfo) {
     return err(
-      returnUserError(
-        new Error(
-          `The subscription '${subscriptionId}' is not found in the current account, please check the '${EnvConfigFileNameTemplate.replace(
-            EnvNamePlaceholder,
-            ctx.envInfo.envName
-          )}' file.`
-        ),
+      new UserError(
         "Solution",
+        `The subscription '${subscriptionId}' is not found in the current account, please check the '${EnvConfigFileNameTemplate.replace(
+          EnvNamePlaceholder,
+          ctx.envInfo.envName
+        )}' file.`,
         SolutionError.SubscriptionNotFound
       )
     );
@@ -173,11 +168,7 @@ export async function askResourceGroupInfo(
   } catch (error) {
     ctx.logProvider?.error(`Failed to list resource group: error '${error}'`);
     return err(
-      returnSystemError(
-        new Error(`Failed to list resource group`),
-        "Solution",
-        SolutionError.FailedToListResourceGroup
-      )
+      new SystemError({error: error as Error, source: "Solution", name: SolutionError.FailedToListResourceGroup, message: "Failed to list resource group"})
     );
   }
   const resourceGroupNameLocations = resourceGroupResults
@@ -222,9 +213,9 @@ export async function askResourceGroupInfo(
     const targetResourceGroupName = inputs[CoreQuestionNames.TargetResourceGroupName];
     if (typeof targetResourceGroupName !== "string") {
       return err(
-        returnSystemError(
-          new Error(`Failed to get user input for resource group info`),
+        new SystemError(
           "Solution",
+          "Failed to get user input for resource group info",
           SolutionError.FailedToListResourceGroup
         )
       );
@@ -249,9 +240,9 @@ async function getLocations(
   if (credential) {
     subscriptionClient = new SubscriptionClient(credential);
   } else {
-    throw returnUserError(
-      new Error(`Failed to get azure credential`),
+    throw new UserError(
       "Solution",
+      "Failed to get azure credential",
       SolutionError.FailedToGetAzureCredential
     );
   }
@@ -268,9 +259,9 @@ async function getLocations(
   const rgLocations = resourceLocations?.filter((item) => locations.includes(item));
   if (!rgLocations || rgLocations.length == 0) {
     return err(
-      returnUserError(
-        new Error(`Failed to list resource group locations`),
+      new UserError(
         "Solution",
+        "Failed to list resource group locations",
         SolutionError.FailedToListResourceGroupLocation
       )
     );
@@ -301,14 +292,12 @@ async function getResourceGroupInfoFromEnvConfig(
 
   // Currently we do not support creating resource group by input config, so just throw an error.
   return err(
-    returnUserError(
-      new Error(
-        `Resource group '${resourceGroupName}' does not exist, please check your ${EnvConfigFileNameTemplate.replace(
-          EnvNamePlaceholder,
-          envName
-        )} file.`
-      ),
+    new UserError(
       "Solution",
+      `Resource group '${resourceGroupName}' does not exist, please check your ${EnvConfigFileNameTemplate.replace(
+        EnvNamePlaceholder,
+        envName
+      )} file.`,
       SolutionError.ResourceGroupNotFound
     )
   );
@@ -327,9 +316,9 @@ async function askCommonQuestions(
 ): Promise<Result<CommonQuestions, FxError>> {
   if (appstudioTokenJson === undefined) {
     return err(
-      returnSystemError(
-        new Error("Graph token json is undefined"),
+      new SystemError( 
         "Solution",
+        "Graph token json is undefined",
         SolutionError.NoAppStudioToken
       )
     );
@@ -355,9 +344,9 @@ async function askCommonQuestions(
   const azureToken = await azureAccountProvider?.getAccountCredentialAsync();
   if (azureToken === undefined) {
     return err(
-      returnUserError(
-        new Error("Login to Azure using the Azure Account extension"),
+      new UserError( 
         "Solution",
+        "Login to Azure using the Azure Account extension",
         SolutionError.NotLoginToAzure
       )
     );
@@ -408,7 +397,7 @@ async function askCommonQuestions(
         };
       }
     } catch (e) {
-      return err(returnUserError(e, "Solution", SolutionError.FailedToCheckResourceGroupExistence));
+      return err(new UserError({error: e as Error, source: "Solution", name: SolutionError.FailedToCheckResourceGroupExistence}));
     }
   } else if (ctx.answers && ctx.ui) {
     const resourceGroupInfoResult = await askResourceGroupInfo(
@@ -451,9 +440,9 @@ async function askCommonQuestions(
     teamsAppTenantId.length === 0
   ) {
     return err(
-      returnSystemError(
-        new Error("Cannot find Teams app tenant id"),
+      new SystemError(
         "Solution",
+        "Cannot find Teams app tenant id",
         SolutionError.NoTeamsAppTenantId
       )
     );
@@ -534,15 +523,15 @@ async function createNewResourceGroup(
     }
 
     return err(
-      returnUserError(new Error(errMsg), "Solution", SolutionError.FailedToCreateResourceGroup)
+      new UserError("Solution", errMsg, SolutionError.FailedToCreateResourceGroup)
     );
   }
 
   if (response.name === undefined) {
     return err(
-      returnSystemError(
-        new Error(`Failed to create resource group ${rgInfo.name}`),
+      new SystemError(
         "Solution",
+        `Failed to create resource group ${rgInfo.name}`,
         SolutionError.FailedToCreateResourceGroup
       )
     );

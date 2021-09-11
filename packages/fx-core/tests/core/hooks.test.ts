@@ -97,7 +97,7 @@ describe("Middleware", () => {
       class MyClass {
         tools?: any = new MockTools();
         async myMethod(inputs: Inputs): Promise<Result<any, FxError>> {
-          return err(UserCancelError);
+          return err(new UserCancelError());
         }
       }
       hooks(MyClass, {
@@ -105,7 +105,7 @@ describe("Middleware", () => {
       });
       const my = new MyClass();
       const res = await my.myMethod(inputs);
-      assert.isTrue(res.isErr() && res.error === UserCancelError);
+      assert.isTrue(res.isErr() && res.error.name === new UserCancelError().name);
     });
 
     it("return ok", async () => {
@@ -130,7 +130,7 @@ describe("Middleware", () => {
       class MyClass {
         tools?: any = new MockTools();
         async myMethod(inputs: Inputs): Promise<Result<any, FxError>> {
-          throw UserCancelError;
+          throw new UserCancelError();
         }
       }
       hooks(MyClass, {
@@ -138,7 +138,7 @@ describe("Middleware", () => {
       });
       const my = new MyClass();
       const res = await my.myMethod(inputs);
-      assert.isTrue(res.isErr() && res.error === UserCancelError);
+      assert.isTrue(res.isErr() && res.error === new UserCancelError());
     });
 
     it("throw unknown error", async () => {
@@ -264,7 +264,7 @@ describe("Middleware", () => {
       class MyClass {
         tools?: any = new MockTools();
         async myMethod(inputs: Inputs): Promise<Result<any, FxError>> {
-          throw UserCancelError;
+          throw new UserCancelError();
         }
       }
       hooks(MyClass, {
@@ -278,7 +278,7 @@ describe("Middleware", () => {
         await fs.ensureDir(path.join(inputs.projectPath, `.${ConfigFolderName}`));
         await my.myMethod(inputs);
       } catch (e) {
-        assert.isTrue(e === UserCancelError);
+        assert.isTrue(e.name === new UserCancelError().name);
       } finally {
         await fs.rmdir(inputs.projectPath!, { recursive: true });
       }

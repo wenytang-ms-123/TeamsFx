@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-import { v2, AzureSolutionSettings, Plugin, returnUserError } from "@microsoft/teamsfx-api";
+import { v2, AzureSolutionSettings, Plugin, UserError } from "@microsoft/teamsfx-api";
 import "reflect-metadata";
 import { Container } from "typedi";
 import { SolutionError } from "./constants";
@@ -95,9 +95,9 @@ export function getActivatedResourcePlugins(solutionSettings: AzureSolutionSetti
     (p) => p.activate && p.activate(solutionSettings) === true
   );
   if (activatedPlugins.length === 0) {
-    throw returnUserError(
-      new Error(`No plugin selected`),
+    throw new UserError(
       "Solution",
+      "No plugin selected",
       SolutionError.NoResourcePluginSelected
     );
   }
@@ -116,9 +116,9 @@ export function getActivatedV2ResourcePlugins(
     (p) => p.activate && p.activate(solutionSettings) === true
   );
   if (activatedPlugins.length === 0) {
-    throw returnUserError(
-      new Error(`No plugin selected`),
+    throw new UserError(
       "Solution",
+      "No plugin selected",
       SolutionError.NoResourcePluginSelected
     );
   }

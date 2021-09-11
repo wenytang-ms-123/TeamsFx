@@ -16,7 +16,7 @@ export class ResultFactory {
     stack?: string,
     helpLink?: string
   ): UserError {
-    return new UserError(name, message, this.source, stack, helpLink, innerError);
+    return new UserError(this.source,  message, name, helpLink);
   }
 
   public static SystemError(
@@ -26,7 +26,7 @@ export class ResultFactory {
     stack?: string,
     issueLink?: string
   ): SystemError {
-    return new SystemError(name, message, this.source, stack, issueLink, innerError);
+    return new SystemError(this.source,  message, name,issueLink);
   }
 
   public static Success(result?: any): AadResult {

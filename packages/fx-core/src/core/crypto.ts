@@ -27,14 +27,7 @@ export class LocalCrypto implements CryptoProvider {
     } catch (e) {
       // ciphertext is broken
       return err(
-        new SystemError(
-          "DecryptionError",
-          "Cipher text is broken",
-          CoreSource,
-          undefined,
-          undefined,
-          e
-        )
+        new SystemError({source: CoreSource, error: e as Error, name: "DecryptionError", message: "Cipher text is broken"})
       );
     }
   }

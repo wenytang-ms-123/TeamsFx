@@ -95,7 +95,7 @@ describe("UserInteraction(UI) - GroupOfTasks", () => {
     const task2: RunnableTask<undefined> = {
       name: "task2",
       run: async (...args: any): Promise<Result<undefined, FxError>> => {
-        return err(UserCancelError);
+        return err(new UserCancelError());
       },
     };
     const task3: RunnableTask<undefined> = {
@@ -117,7 +117,7 @@ describe("UserInteraction(UI) - GroupOfTasks", () => {
       showProgress: showProgress,
       cancellable: cancellable,
     });
-    assert.isTrue(res.isErr() && res.error === UserCancelError);
+    assert.isTrue(res.isErr() && res.error.name === new UserCancelError().name);
   });
   it("case 2: seq=true, fastFail=true, sub-task throw error", async () => {
     const task1: RunnableTask<undefined> = {
@@ -129,7 +129,7 @@ describe("UserInteraction(UI) - GroupOfTasks", () => {
     const task2: RunnableTask<undefined> = {
       name: "task2",
       run: async (...args: any): Promise<Result<undefined, FxError>> => {
-        throw UserCancelError;
+        throw new UserCancelError();
       },
     };
     const task3: RunnableTask<undefined> = {
@@ -151,7 +151,7 @@ describe("UserInteraction(UI) - GroupOfTasks", () => {
       showProgress: showProgress,
       cancellable: cancellable,
     });
-    assert.isTrue(res.isErr() && res.error === UserCancelError);
+    assert.isTrue(res.isErr() && res.error.name === new UserCancelError().name);
   });
   it("case 3: seq=true, fastFail=true, cancel whole task", async () => {
     const task1: RunnableTask<undefined> = {
@@ -191,7 +191,7 @@ describe("UserInteraction(UI) - GroupOfTasks", () => {
       showProgress: showProgress,
       cancellable: cancellable,
     });
-    assert.isTrue(res.isErr() && res.error === UserCancelError);
+    assert.isTrue(res.isErr() && res.error.name === new UserCancelError().name);
   });
   it("case 4: seq=true, fastFail=false, sub-task throw error", async () => {
     const task1: RunnableTask<undefined> = {
@@ -203,7 +203,7 @@ describe("UserInteraction(UI) - GroupOfTasks", () => {
     const task2: RunnableTask<undefined> = {
       name: "task2",
       run: async (...args: any): Promise<Result<undefined, FxError>> => {
-        throw UserCancelError;
+        throw new UserCancelError();
       },
     };
     const task3: RunnableTask<undefined> = {
@@ -229,7 +229,7 @@ describe("UserInteraction(UI) - GroupOfTasks", () => {
       res.isOk() &&
         Array.isArray(res.value) &&
         res.value[1].isErr() &&
-        res.value[1].error === UserCancelError
+        res.value[1].error.name === new UserCancelError().name
     );
   });
 
@@ -244,7 +244,7 @@ describe("UserInteraction(UI) - GroupOfTasks", () => {
     const task2: RunnableTask<undefined> = {
       name: "task2",
       run: async (...args: any): Promise<Result<undefined, FxError>> => {
-        throw UserCancelError;
+        throw new UserCancelError();
       },
     };
     const task3: RunnableTask<undefined> = {
@@ -267,7 +267,7 @@ describe("UserInteraction(UI) - GroupOfTasks", () => {
       showProgress: showProgress,
       cancellable: cancellable,
     });
-    assert.isTrue(res.isErr() && res.error === UserCancelError);
+    assert.isTrue(res.isErr() && res.error.name === new UserCancelError().name);
   });
 
   it("case 6: seq=false, fastFail=true, sub-task throw error", async () => {
@@ -281,7 +281,7 @@ describe("UserInteraction(UI) - GroupOfTasks", () => {
     const task2: RunnableTask<undefined> = {
       name: "task2",
       run: async (...args: any): Promise<Result<undefined, FxError>> => {
-        throw UserCancelError;
+        throw new UserCancelError();
       },
     };
     const task3: RunnableTask<undefined> = {
@@ -304,7 +304,7 @@ describe("UserInteraction(UI) - GroupOfTasks", () => {
       showProgress: showProgress,
       cancellable: cancellable,
     });
-    assert.isTrue(res.isErr() && res.error === UserCancelError);
+    assert.isTrue(res.isErr() && res.error.name === new UserCancelError().name);
   });
 
   it("case 7: seq=false, fastFail=true, sub-task return error", async () => {
@@ -318,7 +318,7 @@ describe("UserInteraction(UI) - GroupOfTasks", () => {
     const task2: RunnableTask<undefined> = {
       name: "task2",
       run: async (...args: any): Promise<Result<undefined, FxError>> => {
-        return err(UserCancelError);
+        return err(new UserCancelError());
       },
     };
     const task3: RunnableTask<undefined> = {
@@ -341,7 +341,7 @@ describe("UserInteraction(UI) - GroupOfTasks", () => {
       showProgress: showProgress,
       cancellable: cancellable,
     });
-    assert.isTrue(res.isErr() && res.error === UserCancelError);
+    assert.isTrue(res.isErr() && res.error.name === new UserCancelError().name);
   });
 
   it("case 8: seq=false, fastFail=false, sub-task return error", async () => {
@@ -355,7 +355,7 @@ describe("UserInteraction(UI) - GroupOfTasks", () => {
     const task2: RunnableTask<undefined> = {
       name: "task2",
       run: async (...args: any): Promise<Result<undefined, FxError>> => {
-        return err(UserCancelError);
+        return err(new UserCancelError());
       },
     };
     const task3: RunnableTask<undefined> = {
@@ -382,7 +382,7 @@ describe("UserInteraction(UI) - GroupOfTasks", () => {
       res.isOk() &&
         Array.isArray(res.value) &&
         res.value[1].isErr() &&
-        res.value[1].error === UserCancelError
+        res.value[1].error.name === new UserCancelError().name
     );
   });
 });

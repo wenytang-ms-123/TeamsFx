@@ -9,9 +9,9 @@ import {
   err,
   ok,
   FxError,
-  returnSystemError,
   ConfigFolderName,
-  returnUserError,
+  SystemError,
+  UserError,
 } from "@microsoft/teamsfx-api";
 import { ScaffoldArmTemplateResult, ArmResourcePlugin } from "../../../common/armInterface";
 import { getActivatedResourcePlugins } from "./ResourcePluginContainer";
@@ -82,11 +82,11 @@ export async function generateArmTemplate(ctx: SolutionContext): Promise<Result<
     }
   } catch (error) {
     result = err(
-      returnSystemError(
-        error,
-        PluginDisplayName.Solution,
-        SolutionError.FailedToDeployArmTemplatesToAzure
-      )
+      new SystemError({ 
+        error: error,
+        source: PluginDisplayName.Solution,
+        name: SolutionError.FailedToDeployArmTemplatesToAzure
+      })
     );
     sendErrorTelemetryThenReturnError(
       SolutionTelemetryEvent.GenerateArmTemplate,
@@ -145,9 +145,9 @@ export async function doDeployArmTemplates(ctx: SolutionContext): Promise<Result
   const resourceGroupName = ctx.envInfo.profile.get(GLOBAL_CONFIG)?.getString(RESOURCE_GROUP_NAME);
   if (!resourceGroupName) {
     return err(
-      returnSystemError(
-        new Error("Failed to get resource group from project solution settings."),
+      new SystemError(
         "Solution",
+        "Failed to get resource group from project solution settings.",
         "NoResourceGroupFound"
       )
     );
@@ -250,12 +250,7 @@ export async function doDeployArmTemplates(ctx: SolutionContext): Promise<Result
     if (failedDeployments.length === 0) {
       failedDeployments.push(deploymentName + " module");
     }
-    const returnError = new Error(
-      `resource deployments (${failedDeployments.join(
-        ", "
-      )}) for your project failed. Please refer to output channel for more error details.`
-    );
-    return err(returnUserError(returnError, "Solution", "ArmDeploymentFailed"));
+    return err(new UserError("Solution", `resource deployments (${failedDeployments.join(", ")}) for your project failed. Please refer to output channel for more error details.`, "ArmDeploymentFailed"));
   }
 }
 
@@ -283,11 +278,11 @@ export async function deployArmTemplates(ctx: SolutionContext): Promise<Result<v
     }
   } catch (error) {
     result = err(
-      returnSystemError(
-        error,
-        PluginDisplayName.Solution,
-        SolutionError.FailedToDeployArmTemplatesToAzure
-      )
+      new SystemError({
+        error: error as Error,
+        source: PluginDisplayName.Solution,
+        name: SolutionError.FailedToDeployArmTemplatesToAzure
+      })
     );
     sendErrorTelemetryThenReturnError(
       SolutionTelemetryEvent.ArmDeployment,
@@ -475,9 +470,9 @@ async function getResourceManagementClientForArmDeployment(
 ): Promise<ResourceManagementClient> {
   const azureToken = await ctx.azureAccountProvider?.getAccountCredentialAsync();
   if (!azureToken) {
-    throw returnSystemError(
-      new Error("Azure Credential is invalid."),
+    throw new SystemError(
       PluginDisplayName.Solution,
+      "Azure Credential is invalid.",
       SolutionError.FailedToGetAzureCredential
     );
   }
@@ -486,9 +481,9 @@ async function getResourceManagementClientForArmDeployment(
     | string
     | undefined;
   if (!subscriptionId) {
-    throw returnSystemError(
-      new Error(`Failed to get subscription id.`),
+    throw new SystemError(
       PluginDisplayName.Solution,
+      "Failed to get subscription id.",
       SolutionError.NoSubscriptionSelected
     );
   }

@@ -7,6 +7,7 @@ import {
   err,
   FxError,
   Inputs,
+  NoProjectOpenedError,
   ok,
   ProjectSettings,
   QTreeNode,
@@ -19,10 +20,10 @@ import {
 import { isV2 } from "..";
 import { CoreHookContext, FxCore } from "../..";
 import {
-  NoProjectOpenedError,
   ProjectEnvNotExistError,
   ProjectSettingsUndefinedError,
   NonActiveEnvError,
+  CoreSource,
 } from "../error";
 import { LocalCrypto } from "../crypto";
 import { environmentManager } from "../environment";
@@ -64,7 +65,7 @@ export function EnvInfoLoaderMW(isMultiEnvEnabled: boolean): Middleware {
     }
 
     if (!ctx.projectSettings) {
-      ctx.result = err(ProjectSettingsUndefinedError());
+      ctx.result = err(new ProjectSettingsUndefinedError());
       return;
     }
 
@@ -126,7 +127,7 @@ export async function loadSolutionContext(
   ignoreEnvInfo = false
 ): Promise<Result<SolutionContext, FxError>> {
   if (!inputs.projectPath) {
-    return err(NoProjectOpenedError());
+    return err(new NoProjectOpenedError(CoreSource));
   }
 
   const cryptoProvider = new LocalCrypto(projectSettings.projectId);
@@ -300,7 +301,7 @@ async function useUserSetEnv(ctx: CoreHookContext, inputs: Inputs): Promise<stri
   if (checkEnv.value) {
     return inputs.env;
   } else {
-    ctx.result = err(ProjectEnvNotExistError(inputs.env));
+    ctx.result = err(new ProjectEnvNotExistError(inputs.env));
     return undefined;
   }
 }
@@ -310,7 +311,7 @@ async function getQuestionsForTargetEnv(
   lastUsed?: string
 ): Promise<Result<QTreeNode | undefined, FxError>> {
   if (!inputs.projectPath) {
-    return err(NoProjectOpenedError());
+    return err(new NoProjectOpenedError(CoreSource));
   }
 
   const envProfilesResult = await environmentManager.listEnvConfigs(inputs.projectPath);
@@ -336,7 +337,7 @@ async function getQuestionsForNewEnv(
   inputs: Inputs
 ): Promise<Result<QTreeNode | undefined, FxError>> {
   if (!inputs.projectPath) {
-    return err(NoProjectOpenedError());
+    return err(new NoProjectOpenedError(CoreSource));
   }
 
   const node = new QTreeNode(getQuestionNewTargetEnvironmentName(inputs.projectPath));

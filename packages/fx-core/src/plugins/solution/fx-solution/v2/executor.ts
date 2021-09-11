@@ -1,4 +1,4 @@
-import { FxError, LogProvider, Result, ok, err, returnSystemError } from "@microsoft/teamsfx-api";
+import { FxError, LogProvider, Result, ok, err, SystemError } from "@microsoft/teamsfx-api";
 import { PluginDisplayName } from "../../../../common/constants";
 import { SolutionError } from "../constants";
 
@@ -44,13 +44,10 @@ export async function executeConcurrently<R>(
 
   if (failed) {
     return err(
-      returnSystemError(
-        new Error(
-          `Failed to run tasks concurrently due to ${JSON.stringify(
-            errors.map((e) => `${e.name}:${e.message}`)
-          )}`
-        ),
-        "Solution",
+      new SystemError(
+        "Solution", `Failed to run tasks concurrently due to ${JSON.stringify(
+          errors.map((e) => `${e.name}:${e.message}`)
+        )}`,
         SolutionError.InternelError
       )
     );

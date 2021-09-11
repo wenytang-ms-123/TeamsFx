@@ -18,7 +18,7 @@ export class ErrorFactory {
     stack?: string,
     helpLink?: string
   ): FxError {
-    return new UserError(name, message, this.source, stack, helpLink, innerError);
+    return new UserError(this.source, message, name, helpLink);
   }
 
   public static SystemError(
@@ -28,6 +28,6 @@ export class ErrorFactory {
     stack?: string,
     issueLink = this.issueLink
   ): FxError {
-    return new SystemError(name, message, this.source, stack, issueLink, innerError);
+    return new SystemError(this.source, message, name, issueLink);
   }
 }

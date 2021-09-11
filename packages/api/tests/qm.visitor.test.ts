@@ -178,7 +178,7 @@ describe("Question Model - Visitor Test", () => {
       sandbox.stub(mockUI, "inputText").callsFake(async (config: InputTextConfig) => {
         const actualStep = Number(config.name);
         if (actualStep === cancelNum) {
-          return err(UserCancelError);
+          return err(new UserCancelError());
         }
         actualSequence.push(config.name);
         assert(config.step === actualStep);
@@ -193,7 +193,7 @@ describe("Question Model - Visitor Test", () => {
       }
       const inputs = createInputs();
       const res = await traverse(root, inputs, mockUI);
-      assert.isTrue(res.isErr() && res.error === UserCancelError);
+      assert.isTrue(res.isErr() && res.error instanceof UserCancelError);
       for (let i = 1; i < cancelNum; ++i) {
         assert.isTrue(inputs[`${i}`] === `mocked value of ${i}`);
       }
@@ -341,7 +341,7 @@ describe("Question Model - Visitor Test", () => {
       root.addChild(new QTreeNode(question3));
 
       const res = await traverse(root, inputs, mockUI);
-      assert.isTrue(res.isErr() && res.error === UserCancelError);
+      assert.isTrue(res.isErr() && res.error instanceof UserCancelError);
       for (let i = 1; i <= 3; ++i) {
         assert.isTrue(inputs[`${i}`] === undefined);
       }

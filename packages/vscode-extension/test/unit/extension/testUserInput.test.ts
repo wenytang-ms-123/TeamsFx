@@ -11,7 +11,7 @@ import {
   GroupOfTasks,
   RunnableTask,
   err,
-  UserCancelError,
+  new UserCancelError(),
 } from "@microsoft/teamsfx-api";
 import { sleep } from "../../../src/utils/commonUtils";
 import { VsCodeUI } from "../../../src/qm/vsc_ui";
@@ -65,7 +65,7 @@ suite("Mock Tests", () => {
         name: "task2",
         run: async (...args: any): Promise<Result<undefined, FxError>> => {
           await sleep(30);
-          return err(UserCancelError);
+          return err(new UserCancelError());
         },
       };
       const task3: RunnableTask<undefined> = {
@@ -88,7 +88,7 @@ suite("Mock Tests", () => {
         showProgress: showProgress,
         cancellable: cancellable,
       });
-      chai.assert.isTrue(res.isErr() && res.error === UserCancelError);
+      chai.assert.isTrue(res.isErr() && res.error === new UserCancelError());
     });
   });
 });

@@ -11,12 +11,13 @@ import {
   Inputs,
   ProjectSettingsFileName,
   StaticPlatforms,
+  WriteFileError,
 } from "@microsoft/teamsfx-api";
 import * as fs from "fs-extra";
 import * as path from "path";
 import { CoreHookContext, FxCore, isV2 } from "..";
 import { isMultiEnvEnabled } from "../../common";
-import { WriteFileError } from "../error";
+import { CoreSource } from "../error";
 
 /**
  * This middleware will help to persist project settings if necessary.
@@ -55,7 +56,7 @@ export const ProjectSettingsWriterMW: Middleware = async (
       await fs.writeFile(settingFile, JSON.stringify(projectSettings, null, 4));
       core.tools.logProvider.debug(`[core] persist project setting file: ${settingFile}`);
     } catch (e) {
-      ctx.res = err(WriteFileError(e));
+      ctx.res = err(new WriteFileError(CoreSource, e));
     }
   }
 };

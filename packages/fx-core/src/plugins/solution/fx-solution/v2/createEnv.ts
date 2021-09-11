@@ -33,7 +33,7 @@ export async function createEnv(ctx: v2.Context, inputs: Inputs): Promise<Result
         await getParameterJson(solutionContext);
       }
     } catch (e) {
-      return err(CopyFileError(e));
+      return err(new CopyFileError("Solution", e));
     }
   }
   return ok(Void);

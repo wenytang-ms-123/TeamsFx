@@ -4,9 +4,13 @@
 
 import { HookContext, Middleware, NextFunction } from "@feathersjs/hooks";
 import {
+  ConcurrentError,
   ConfigFolderName,
   err,
   Inputs,
+  InvalidProjectError,
+  NoProjectOpenedError,
+  PathNotExistError,
   ProductName,
   StaticPlatforms,
 } from "@microsoft/teamsfx-api";
@@ -15,12 +19,7 @@ import * as os from "os";
 import * as path from "path";
 import { lock, unlock } from "proper-lockfile";
 import { FxCore } from "..";
-import {
-  ConcurrentError,
-  InvalidProjectError,
-  NoProjectOpenedError,
-  PathNotExistError,
-} from "../error";
+import { CoreSource } from "../error";
 import { base64Encode } from "../tools";
 
 export const ConcurrentLockerMW: Middleware = async (ctx: HookContext, next: NextFunction) => {
@@ -33,16 +32,16 @@ export const ConcurrentLockerMW: Middleware = async (ctx: HookContext, next: Nex
   const ignoreLock = inputs.ignoreLock === true || StaticPlatforms.includes(inputs.platform);
   if (ignoreLock === false) {
     if (!inputs.projectPath) {
-      ctx.result = err(NoProjectOpenedError());
+      ctx.result = err(new NoProjectOpenedError(CoreSource));
       return;
     }
     if (!(await fs.pathExists(inputs.projectPath))) {
-      ctx.result = err(PathNotExistError(inputs.projectPath));
+      ctx.result = err(new PathNotExistError(CoreSource, inputs.projectPath));
       return;
     }
     const lf = path.join(inputs.projectPath, `.${ConfigFolderName}`);
     if (!(await fs.pathExists(lf))) {
-      ctx.result = err(InvalidProjectError());
+      ctx.result = err(new InvalidProjectError(CoreSource));
       return;
     }
 
@@ -66,7 +65,7 @@ export const ConcurrentLockerMW: Middleware = async (ctx: HookContext, next: Nex
       .catch((e: any) => {
         if (e["code"] === "ELOCKED") {
           if (logger) logger.warning(`[core] failed to acquire lock on: ${lf}`);
-          ctx.result = err(new ConcurrentError());
+          ctx.result = err(new ConcurrentError(CoreSource));
           return;
         }
         throw e;

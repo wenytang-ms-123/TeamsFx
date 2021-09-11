@@ -8,8 +8,6 @@ import {
   UserError,
   err,
   Func,
-  ok,
-  newSystemError,
   Result,
   FxError,
 } from "@microsoft/teamsfx-api";
@@ -94,10 +92,10 @@ export class AadAppForTeamsPlugin implements Plugin, ArmResourcePlugin {
       return Promise.resolve(this.setApplicationInContext(ctx, isLocal));
     }
     return err(
-      newSystemError(
+      new SystemError(
         Plugins.pluginNameShort,
-        "FunctionRouterError",
         `Failed to route function call:${JSON.stringify(func)}`,
+        "FunctionRouterError",
         Links.ISSUE_LINK
       )
     );
@@ -149,19 +147,7 @@ export class AadAppForTeamsPlugin implements Plugin, ArmResourcePlugin {
 
   private returnError(e: any, ctx: PluginContext, stage: string): AadResult {
     if (e instanceof SystemError || e instanceof UserError) {
-      let errorMessage = e.message;
-      // For errors contains innerError, e.g. failures when calling Graph API
-      if (e.innerError) {
-        errorMessage += ` Detailed error: ${e.innerError.message}.`;
-        if (e.innerError.response?.data?.errorMessage) {
-          // For errors return from App Studio API
-          errorMessage += ` Reason: ${e.innerError.response?.data?.errorMessage}`;
-        } else if (e.innerError.response?.data?.error?.message) {
-          // For errors return from Graph API
-          errorMessage += ` Reason: ${e.innerError.response?.data?.error?.message}`;
-        }
-        e.message = errorMessage;
-      }
+      const errorMessage = e.message;
       ctx.logProvider?.error(errorMessage);
       TelemetryUtils.init(ctx);
       TelemetryUtils.sendErrorEvent(

@@ -23,7 +23,6 @@ import {
   Func,
   UserError,
   SystemError,
-  returnSystemError,
   Inputs,
   VsCodeEnv,
   AppStudioTokenProvider,
@@ -405,7 +404,7 @@ async function processResult(eventName: string | undefined, result: Result<null,
       ExtTelemetry.sendTelemetryErrorEvent(eventName, result.error);
     }
     const error = result.error;
-    if (isUserCancelError(error)) {
+    if (isnew UserCancelError()(error)) {
       return;
     }
     if (isLoginFaiureError(error)) {

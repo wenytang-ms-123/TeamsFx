@@ -23,12 +23,10 @@ export class FxBotPluginResultFactory {
   ): FxResult {
     return err(
       new UserError(
-        errorName,
-        errorMessage,
         FxBotPluginResultFactory.source,
-        innerError?.stack,
+        errorMessage,
+        errorName,
         showHelpLink ? FxBotPluginResultFactory.defaultHelpLink : undefined,
-        innerError
       )
     );
   }
@@ -36,12 +34,10 @@ export class FxBotPluginResultFactory {
   public static SystemError(errorName: string, errorMessage: string, innerError?: any): FxResult {
     return err(
       new SystemError(
-        errorName,
-        errorMessage,
         FxBotPluginResultFactory.source,
-        innerError?.stack,
+        errorMessage,
+        errorName,
         FxBotPluginResultFactory.defaultIssueLink,
-        innerError
       )
     );
   }

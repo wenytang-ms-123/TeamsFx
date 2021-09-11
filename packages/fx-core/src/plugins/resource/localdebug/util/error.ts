@@ -2,18 +2,18 @@
 // Licensed under the MIT license.
 "use strict";
 
-import { returnSystemError, returnUserError, SystemError, UserError } from "@microsoft/teamsfx-api";
+import { SystemError, UserError } from "@microsoft/teamsfx-api";
 
 export function UnsupportedPlatform(platform: string): SystemError {
-  return returnSystemError(
-    new Error(`Unsupported platform: ${platform}.`),
+  return new SystemError(
     "localdebug-plugin",
+    `Unsupported platform: ${platform}.`,
     "UnsupportedPlatform"
   );
 }
 
 export function MissingComponent(component: string): UserError {
-  return returnUserError(
+  return new UserError(
     new Error(`Component ${component} is required for local debug.`),
     "localdebug-plugin",
     "MissingComponent"
@@ -21,7 +21,7 @@ export function MissingComponent(component: string): UserError {
 }
 
 export function MissingStep(operation: string, requiredStep: string): UserError {
-  return returnUserError(
+  return new UserError(
     new Error(
       `Step "${requiredStep}" is required before ${operation}. Run the required step first.`
     ),
@@ -31,7 +31,7 @@ export function MissingStep(operation: string, requiredStep: string): UserError 
 }
 
 export function NgrokTunnelNotConnected(): UserError {
-  return returnUserError(
+  return new UserError(
     new Error("Ngrok tunnel is not connected. Check your network settings and try again."),
     "localdebug-plugin",
     "NgrokTunnelNotConnected"
@@ -39,9 +39,9 @@ export function NgrokTunnelNotConnected(): UserError {
 }
 
 export function LocalBotEndpointNotConfigured(): UserError {
-  return returnUserError(
+  return new UserError(
     new Error(
-      'Local bot endpoint is not configured. Set "fx-resource-local-debug.localBotEndpoint" in ".fx/default.user.data" and try again.'
+      "Local bot endpoint is not configured. Set \"fx-resource-local-debug.localBotEndpoint\" in \".fx/default.user.data\" and try again."
     ),
     "localdebug-plugin",
     "LocalBotEndpointNotConfigured"
@@ -49,7 +49,7 @@ export function LocalBotEndpointNotConfigured(): UserError {
 }
 
 export function InvalidLocalBotEndpointFormat(localBotEndpoint: string): UserError {
-  return returnUserError(
+  return new UserError(
     new Error(`Local bot endpoint format is invalid: ${localBotEndpoint}.`),
     "localdebug-plugin",
     "InvalidLocalBotEndpointFormat"

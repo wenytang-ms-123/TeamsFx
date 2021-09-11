@@ -4,52 +4,31 @@
 import {
   ConfigFolderName,
   ConfigMap,
-  CryptoProvider,
-  EnvProfileFileNameTemplate,
-  EnvConfig,
-  err,
-  FxError,
-  ok,
-  PublishProfilesFolderName,
+  CryptoProvider, EnvConfig, EnvConfigFileNameTemplate, EnvInfo, EnvNamePlaceholder, EnvProfileFileNameTemplate, err,
+  FxError, InputConfigsFolderName, Json, ok, PathNotExistError, ProjectSettingsFileName, PublishProfilesFolderName,
+  ReadFileError,
   Result,
   SystemError,
-  InputConfigsFolderName,
-  EnvConfigFileNameTemplate,
-  EnvNamePlaceholder,
-  EnvInfo,
-  Json,
-  ProjectSettingsFileName,
+  WriteFileError
 } from "@microsoft/teamsfx-api";
-import path, { basename } from "path";
-import fs from "fs-extra";
-import jsum from "jsum";
-import {
-  deserializeDict,
-  dataNeedEncryption,
-  mergeSerectData,
-  PathNotExistError,
-  serializeDict,
-  sperateSecretData,
-  WriteFileError,
-  mapToJson,
-  objectToMap,
-  ProjectEnvNotExistError,
-  InvalidEnvConfigError,
-  ModifiedSecretError,
-} from "..";
-import { GLOBAL_CONFIG } from "../plugins/solution/fx-solution/constants";
-import { readJson } from "../common/fileUtils";
-import { Component, sendTelemetryErrorEvent, TelemetryEvent } from "../common/telemetry";
-import { isMultiEnvEnabled } from "../common";
+import * as envConfigSchema from "@microsoft/teamsfx-api/build/schemas/envConfig.json";
 import Ajv from "ajv";
 import * as draft6MetaSchema from "ajv/dist/refs/json-schema-draft-06.json";
-import * as envConfigSchema from "@microsoft/teamsfx-api/build/schemas/envConfig.json";
+import fs from "fs-extra";
+import jsum from "jsum";
+import path, { basename } from "path";
 import {
-  InvalidProjectError,
-  InvalidProjectSettingsFileError,
-  isValidProject,
-  ReadFileError,
+  InvalidProjectSettingsFileError
 } from ".";
+import {
+  dataNeedEncryption, deserializeDict, InvalidEnvConfigError, mapToJson, mergeSerectData, ModifiedSecretError, objectToMap, ProjectEnvNotExistError, serializeDict,
+  sperateSecretData,
+} from "..";
+import { isMultiEnvEnabled } from "../common";
+import { readJson } from "../common/fileUtils";
+import { Component, sendTelemetryErrorEvent, TelemetryEvent } from "../common/telemetry";
+import { GLOBAL_CONFIG } from "../plugins/solution/fx-solution/constants";
+import { CoreSource } from "./error";
 
 export interface EnvProfileFiles {
   envProfile: string;
@@ -82,7 +61,7 @@ class EnvironmentManager {
     cryptoProvider?: CryptoProvider
   ): Promise<Result<EnvInfo, FxError>> {
     if (!(await fs.pathExists(projectPath))) {
-      return err(PathNotExistError(projectPath));
+      return err(new PathNotExistError(CoreSource, projectPath));
     }
 
     envName = envName ?? this.getDefaultEnvName();
@@ -122,7 +101,7 @@ class EnvironmentManager {
     envName?: string
   ): Promise<Result<string, FxError>> {
     if (!(await fs.pathExists(projectPath))) {
-      return err(PathNotExistError(projectPath));
+      return err(new PathNotExistError(CoreSource, projectPath));
     }
 
     const envConfigsFolder = this.getEnvConfigsFolder(projectPath);
@@ -136,7 +115,7 @@ class EnvironmentManager {
     try {
       await fs.writeFile(envConfigPath, JSON.stringify(envConfig, null, 4));
     } catch (error) {
-      return err(WriteFileError(error));
+      return err(new WriteFileError(CoreSource, error));
     }
 
     return ok(envConfigPath);
@@ -149,7 +128,7 @@ class EnvironmentManager {
     cryptoProvider?: CryptoProvider
   ): Promise<Result<string, FxError>> {
     if (!(await fs.pathExists(projectPath))) {
-      return err(PathNotExistError(projectPath));
+      return err(new PathNotExistError(CoreSource, projectPath));
     }
 
     const envProfilesFolder = this.getEnvProfilesFolder(projectPath);
@@ -173,7 +152,7 @@ class EnvironmentManager {
       await fs.writeFile(envFiles.envProfile, JSON.stringify(data, null, 4));
       await fs.writeFile(envFiles.userDataFile, serializeDict(secrets));
     } catch (error) {
-      return err(WriteFileError(error));
+      return err(new WriteFileError(CoreSource, error));
     }
 
     return ok(envFiles.envProfile);
@@ -181,7 +160,7 @@ class EnvironmentManager {
 
   public async listEnvConfigs(projectPath: string): Promise<Result<Array<string>, FxError>> {
     if (!(await fs.pathExists(projectPath))) {
-      return err(PathNotExistError(projectPath));
+      return err(new PathNotExistError(CoreSource, projectPath));
     }
 
     const envConfigsFolder = this.getEnvConfigsFolder(projectPath);
@@ -239,7 +218,7 @@ class EnvironmentManager {
 
     const envConfigPath = this.getEnvConfigPath(envName, projectPath);
     if (!(await fs.pathExists(envConfigPath))) {
-      return err(ProjectEnvNotExistError(envName));
+      return err(new ProjectEnvNotExistError(envName));
     }
 
     const validate = this.ajv.compile<EnvConfig>(envConfigSchema);
@@ -248,7 +227,7 @@ class EnvironmentManager {
       return ok(data);
     }
 
-    return err(InvalidEnvConfigError(envName, JSON.stringify(validate.errors)));
+    return err(new InvalidEnvConfigError(envName, JSON.stringify(validate.errors)));
   }
 
   private async loadEnvProfile(
@@ -324,7 +303,7 @@ class EnvironmentManager {
         sendTelemetryErrorEvent(
           Component.core,
           TelemetryEvent.DecryptUserdata,
-          ModifiedSecretError()
+          new ModifiedSecretError()
         );
       } else {
         const fxError: SystemError = res.error;
@@ -403,7 +382,7 @@ class EnvironmentManager {
       `.${ConfigFolderName}/${InputConfigsFolderName}/${ProjectSettingsFileName}`
     );
     if (!fs.existsSync(settingsJsonPath)) {
-      return err(PathNotExistError(settingsJsonPath));
+      return err(new PathNotExistError(CoreSource, settingsJsonPath));
     }
 
     let settingsJson;
@@ -411,9 +390,7 @@ class EnvironmentManager {
       settingsJson = fs.readJSONSync(settingsJsonPath, { encoding: "utf8" });
     } catch (error) {
       return err(
-        InvalidProjectSettingsFileError(
-          `Project settings file is not a valid JSON, error: '${error}'`
-        )
+        new ReadFileError(CoreSource, error)
       );
     }
 
@@ -423,7 +400,7 @@ class EnvironmentManager {
       typeof settingsJson.activeEnvironment !== "string"
     ) {
       return err(
-        InvalidProjectSettingsFileError(
+        new InvalidProjectSettingsFileError(
           "The property 'activeEnvironment' does not exist in project settings file."
         )
       );

@@ -2,13 +2,14 @@
 // Licensed under the MIT license.
 
 import { Middleware, NextFunction } from "@feathersjs/hooks/lib";
-import { AzureSolutionSettings, err, Inputs, Plugin } from "@microsoft/teamsfx-api";
+import { AzureSolutionSettings, err, Inputs, NoProjectOpenedError, PathNotExistError, Plugin } from "@microsoft/teamsfx-api";
 import * as fs from "fs-extra";
-import { CoreHookContext, isV2, NoProjectOpenedError, PathNotExistError } from "..";
+import { CoreHookContext, isV2 } from "..";
 import { isMultiEnvEnabled } from "../../common";
 import { LocalSettingsProvider } from "../../common/localSettingsProvider";
 import { PluginNames } from "../../plugins/solution/fx-solution/constants";
 import { getActivatedResourcePlugins } from "../../plugins/solution/fx-solution/ResourcePluginContainer";
+import { CoreSource } from "../error";
 
 export const LocalSettingsLoaderMW: Middleware = async (
   ctx: CoreHookContext,
@@ -17,13 +18,13 @@ export const LocalSettingsLoaderMW: Middleware = async (
   if (isMultiEnvEnabled()) {
     const inputs = ctx.arguments[ctx.arguments.length - 1] as Inputs;
     if (!inputs.projectPath) {
-      ctx.result = err(NoProjectOpenedError());
+      ctx.result = err(new NoProjectOpenedError(CoreSource));
       return;
     }
 
     const projectPathExist = await fs.pathExists(inputs.projectPath);
     if (!projectPathExist) {
-      ctx.result = err(PathNotExistError(inputs.projectPath));
+      ctx.result = err(new PathNotExistError(CoreSource, inputs.projectPath));
       return;
     }
 

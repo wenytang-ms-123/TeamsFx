@@ -26,7 +26,7 @@ export async function testProgress() {
     name: "task2",
     run: async (...args: any): Promise<Result<undefined, FxError>> => {
       await sleep(3000);
-      return err(UserCancelError);
+      return err(new UserCancelError());
     },
   };
   const task3: RunnableTask<undefined> = {

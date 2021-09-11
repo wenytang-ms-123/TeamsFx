@@ -176,7 +176,7 @@ export class VsCodeUI implements UserInteraction {
           disposables.push(
             quickPick.onDidAccept(onDidAccept),
             quickPick.onDidHide(() => {
-              resolve(err(UserCancelError));
+              resolve(err(new UserCancelError()));
             }),
             quickPick.onDidTriggerButton((button) => {
               if (button === QuickInputButtons.Back) resolve(ok({ type: "back" }));
@@ -271,7 +271,7 @@ export class VsCodeUI implements UserInteraction {
           disposables.push(
             quickPick.onDidAccept(onDidAccept),
             quickPick.onDidHide(() => {
-              resolve(err(UserCancelError));
+              resolve(err(new UserCancelError()));
             }),
             quickPick.onDidTriggerButton((button) => {
               if (button === QuickInputButtons.Back) resolve(ok({ type: "back" }));
@@ -360,7 +360,7 @@ export class VsCodeUI implements UserInteraction {
           }),
           inputBox.onDidAccept(onDidAccept),
           inputBox.onDidHide(() => {
-            resolve(err(UserCancelError));
+            resolve(err(new UserCancelError()));
           }),
           inputBox.onDidTriggerButton((button) => {
             if (button === QuickInputButtons.Back) resolve(ok({ type: "back" }));
@@ -448,7 +448,7 @@ export class VsCodeUI implements UserInteraction {
 
         disposables.push(
           quickPick.onDidHide(() => {
-            if (fileSelectorIsOpen === false) resolve(err(UserCancelError));
+            if (fileSelectorIsOpen === false) resolve(err(new UserCancelError()));
           }),
           quickPick.onDidTriggerButton((button) => {
             if (button === QuickInputButtons.Back) resolve(ok({ type: "back" }));
@@ -519,7 +519,7 @@ export class VsCodeUI implements UserInteraction {
     return new Promise(async (resolve) => {
       env.openExternal(uri).then((v) => {
         if (v) resolve(ok(v));
-        else resolve(err(UserCancelError));
+        else resolve(err(new UserCancelError()));
       });
     });
   }
@@ -565,7 +565,7 @@ export class VsCodeUI implements UserInteraction {
         }
         promise.then((v) => {
           if (v) resolve(ok(v));
-          else resolve(err(UserCancelError));
+          else resolve(err(new UserCancelError()));
         });
       } catch (error) {
         resolve(err(assembleError(error)));
@@ -592,7 +592,7 @@ export class VsCodeUI implements UserInteraction {
           if (config.cancellable === true) {
             token.onCancellationRequested(() => {
               if (task.cancel) task.cancel();
-              resolve(err(UserCancelError));
+              resolve(err(new UserCancelError()));
             });
           }
           let lastReport = 0;
@@ -649,7 +649,7 @@ export class VsCodeUI implements UserInteraction {
               current = task.current ? task.current : 0;
             } while (current < total && !task.isCanceled);
           }
-          if (task.isCanceled) resolve(err(UserCancelError));
+          if (task.isCanceled) resolve(err(new UserCancelError()));
         }
       );
     });

@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-import { FxError, returnSystemError, returnUserError } from "@microsoft/teamsfx-api";
+import { FxError, SystemError, UserError } from "@microsoft/teamsfx-api";
 import { ProjectConstants, ConfigRetryOperations, TeamsToolkitComponent } from "./constants";
 
 enum ErrorType {
@@ -162,20 +162,18 @@ export function BuildError(pluginError: IApimPluginError, ...params: any[]): FxE
     : `${pluginError.message(...params)} ${innerError?.message}`;
   switch (pluginError.type) {
     case ErrorType.User:
-      return returnUserError(
-        new Error(message),
+      return new UserError(
         ProjectConstants.pluginShortName,
+        message,
         pluginError.code,
         pluginError.helpLink,
-        innerError
       );
     case ErrorType.System:
-      return returnSystemError(
-        new Error(message),
+      return new SystemError(
         ProjectConstants.pluginShortName,
+        message,
         pluginError.code,
         pluginError.helpLink,
-        innerError
       );
   }
 }

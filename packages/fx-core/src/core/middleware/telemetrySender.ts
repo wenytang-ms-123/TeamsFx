@@ -3,22 +3,22 @@
 "use strict";
 
 import { Middleware, NextFunction } from "@feathersjs/hooks";
-import { assembleError, err, FxError, Inputs } from "@microsoft/teamsfx-api";
+import { err, FxError, Inputs, SystemError } from "@microsoft/teamsfx-api";
 import { kebabCase } from "lodash";
-import { CoreHookContext, FxCore } from "..";
+import { CoreHookContext } from "..";
 import {
   Component,
   sendTelemetryErrorEvent,
   sendTelemetryEvent,
   TelemetryProperty,
-  TelemetrySuccess,
+  TelemetrySuccess
 } from "../../common/telemetry";
+import { CoreSource } from "../error";
 
 /**
  * Telemetry sender
  */
 export const TelemetrySenderMW: Middleware = async (ctx: CoreHookContext, next: NextFunction) => {
-  const core = ctx.self as FxCore;
   const inputs = ctx.arguments[ctx.arguments.length - 1] as Inputs;
   const solutionContext = ctx.solutionContext;
   const appId = solutionContext?.envInfo.profile.get("solution")?.get("remoteTeamsAppId") as string;
@@ -31,7 +31,7 @@ export const TelemetrySenderMW: Middleware = async (ctx: CoreHookContext, next: 
     sendTelemetryEvent(Component.core, method + "-start", properties);
     await next();
   } catch (e) {
-    ctx.result = err(assembleError(e));
+    ctx.result = err(new SystemError(e as Error, CoreSource));
     throw e;
   } finally {
     if (ctx.result?.isOk()) {

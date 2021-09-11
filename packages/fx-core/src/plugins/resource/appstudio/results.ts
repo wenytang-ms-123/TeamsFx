@@ -12,7 +12,7 @@ export class AppStudioResultFactory {
     stack?: string,
     helpLink?: string
   ): UserError {
-    return new UserError(name, message, Constants.PLUGIN_NAME, stack, helpLink, innerError);
+    return new UserError(Constants.PLUGIN_NAME, message, name, helpLink);
   }
 
   public static SystemError(
@@ -22,6 +22,6 @@ export class AppStudioResultFactory {
     stack?: string,
     issueLink?: string
   ): SystemError {
-    return new SystemError(name, message, Constants.PLUGIN_NAME, stack, issueLink, innerError);
+    return new SystemError(Constants.PLUGIN_NAME, message, name, issueLink);
   }
 }

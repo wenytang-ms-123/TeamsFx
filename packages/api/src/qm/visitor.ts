@@ -1,29 +1,22 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import { err, ok, Result } from "neverthrow";
+import { TelemetryEvent, TelemetryProperty } from "../constants";
 import {
-  TextInputQuestion,
-  QTreeNode,
-  Question,
-  SingleSelectQuestion,
-  StaticOptions,
-  OptionItem,
-  MultiSelectQuestion,
-} from "./question";
-import { getValidationFunction, validate } from "./validation";
-import {
-  assembleError,
-  FxError,
-  returnSystemError,
-  returnUserError,
-  SystemError,
-  UserCancelError,
+  EmptyOptionError,
+  FxError, SystemError, UserCancelError
 } from "../error";
 import { Inputs, Void } from "../types";
-import { InputResult, UserInteraction } from "./ui";
-import { err, ok, Result } from "neverthrow";
 import { TelemetryReporter } from "../utils/telemetry";
-import { TelemetryEvent, TelemetryProperty } from "../constants";
+import {
+  MultiSelectQuestion, OptionItem, QTreeNode,
+  Question,
+  SingleSelectQuestion,
+  StaticOptions, TextInputQuestion
+} from "./question";
+import { InputResult, UserInteraction } from "./ui";
+import { getValidationFunction, validate } from "./validation";
 
 export function isAutoSkipSelect(q: Question): boolean {
   if (q.type === "singleSelect" || q.type === "multiSelect") {
@@ -46,7 +39,7 @@ export async function loadOptions(
       option = (await getCallFuncValue(inputs, selectQuestion.dynamicOptions)) as StaticOptions;
     else option = selectQuestion.staticOptions;
     if (!option || option.length === 0) {
-      throw returnSystemError(new Error("Select option is empty!"), "API", "EmptySelectOption");
+      throw new EmptyOptionError();
     }
     if (selectQuestion.skipSingleOption && option.length === 1)
       return { autoSkip: true, options: option };
@@ -114,7 +107,7 @@ const questionVisitor = async function (
       }
       return ok({ type: "success", result: res });
     } catch (e) {
-      return err(assembleError(e));
+      return err(new SystemError({source: "API", error: e}));
     }
   } else {
     const defaultValue =
@@ -144,7 +137,7 @@ const questionVisitor = async function (
       const res = await loadOptions(selectQuestion, inputs);
       if (!res.options || res.options.length === 0) {
         return err(
-          returnSystemError(new Error("Select option is empty!"), "API", "EmptySelectOption")
+          new EmptyOptionError()
         );
       }
       // Skip single/mulitple option select
@@ -227,11 +220,7 @@ const questionVisitor = async function (
     }
   }
   return err(
-    returnUserError(
-      new Error(`Unsupported question node type:${JSON.stringify(question)}`),
-      "API",
-      "UnsupportedNodeType"
-    )
+    new SystemError("API", "UnknownQuestionNodeType", `Unsupported question node type:${JSON.stringify(question)}`)
   );
 };
 
@@ -302,7 +291,7 @@ export async function traverse(
           }
         }
         if (!found) {
-          return err(UserCancelError);
+          return err(new UserCancelError());
         }
         --step;
         continue; //ignore the following steps

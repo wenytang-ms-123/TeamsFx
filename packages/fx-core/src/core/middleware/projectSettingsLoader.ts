@@ -8,9 +8,13 @@ import {
   FxError,
   InputConfigsFolderName,
   Inputs,
+  InvalidProjectError,
+  NoProjectOpenedError,
   ok,
+  PathNotExistError,
   ProjectSettings,
   ProjectSettingsFileName,
+  ReadFileError,
   Result,
   SolutionContext,
   Stage,
@@ -26,12 +30,7 @@ import { isMultiEnvEnabled } from "../../common";
 import { readJson } from "../../common/fileUtils";
 import { PluginNames } from "../../plugins/solution/fx-solution/constants";
 import { LocalCrypto } from "../crypto";
-import {
-  InvalidProjectError,
-  NoProjectOpenedError,
-  PathNotExistError,
-  ReadFileError,
-} from "../error";
+import { CoreSource } from "../error";
 import { PermissionRequestFileProvider } from "../permissionRequest";
 import { newEnvInfo, validateSettings } from "../tools";
 
@@ -42,12 +41,12 @@ export const ProjectSettingsLoaderMW: Middleware = async (
   const inputs = ctx.arguments[ctx.arguments.length - 1] as Inputs;
   if (!shouldIgnored(ctx)) {
     if (!inputs.projectPath) {
-      ctx.result = err(NoProjectOpenedError());
+      ctx.result = err(new NoProjectOpenedError(CoreSource));
       return;
     }
     const projectPathExist = await fs.pathExists(inputs.projectPath);
     if (!projectPathExist) {
-      ctx.result = err(PathNotExistError(inputs.projectPath));
+      ctx.result = err(new PathNotExistError(CoreSource, inputs.projectPath));
       return;
     }
     const loadRes = await loadProjectSettings(inputs);
@@ -60,7 +59,7 @@ export const ProjectSettingsLoaderMW: Middleware = async (
 
     const validRes = validateSettings(projectSettings);
     if (validRes) {
-      ctx.result = err(InvalidProjectError(validRes));
+      ctx.result = err(new InvalidProjectError(CoreSource, validRes));
       return;
     }
 
@@ -79,7 +78,7 @@ export async function loadProjectSettings(
 ): Promise<Result<[ProjectSettings, boolean], FxError>> {
   try {
     if (!inputs.projectPath) {
-      return err(NoProjectOpenedError());
+      return err(new NoProjectOpenedError(CoreSource));
     }
 
     const confFolderPath = path.resolve(inputs.projectPath, `.${ConfigFolderName}`);
@@ -102,7 +101,7 @@ export async function loadProjectSettings(
 
     return ok([projectSettings, projectIdMissing]);
   } catch (e) {
-    return err(ReadFileError(e));
+    return err(new ReadFileError(CoreSource, e));
   }
 }
 

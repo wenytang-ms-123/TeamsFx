@@ -6,9 +6,9 @@ import {
   MultiSelectQuestion,
   ok,
   OptionItem,
-  returnSystemError,
   SingleSelectQuestion,
   StaticOptions,
+  SystemError,
   Void,
 } from "@microsoft/teamsfx-api";
 import { SolutionError } from "./constants";
@@ -116,9 +116,9 @@ export const FrontendHostTypeQuestion: SingleSelectQuestion = {
       if (cap.includes(TabOptionItem.id)) return [HostTypeOptionAzure, HostTypeOptionSPFx];
       return [];
     }
-    throw returnSystemError(
-      new Error("Capabilities is undefined"),
+    throw new SystemError(
       "Solution",
+      "Capabilities is undefined",
       SolutionError.InternelError
     );
   },

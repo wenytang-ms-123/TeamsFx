@@ -1,23 +1,11 @@
 import {
-  ConfigFolderName,
-  SolutionContext,
-  ProjectSettings,
-  AzureSolutionSettings,
-  EnvInfo,
-  ConfigMap,
   AppPackageFolderName,
-  ArchiveFolderName,
-  V1ManifestFileName,
-  ProjectSettingsFileName,
-  EnvConfig,
-  InputConfigsFolderName,
-  err,
-  FxError,
-  Result,
-  ok,
+  ArchiveFolderName, AzureSolutionSettings, ConfigFolderName, ConfigMap, EnvConfig, EnvInfo, ProjectSettings, ProjectSettingsFileName, SolutionContext, V1ManifestFileName
 } from "@microsoft/teamsfx-api";
-import * as path from "path";
 import * as fs from "fs-extra";
+import * as path from "path";
+import { isMultiEnvEnabled } from "../common";
+import { ConstantString } from "../common/constants";
 import { GLOBAL_CONFIG, PluginNames } from "../plugins/solution/fx-solution/constants";
 import {
   AzureResourceApim,
@@ -26,12 +14,9 @@ import {
   BotOptionItem,
   HostTypeOptionSPFx,
   MessageExtensionItem,
-  TabOptionItem,
+  TabOptionItem
 } from "../plugins/solution/fx-solution/question";
 import { environmentManager } from "./environment";
-import { ConstantString } from "../common/constants";
-import { isMultiEnvEnabled } from "../common";
-import { InvalidProjectError, InvalidProjectSettingsFileError, ReadFileError } from ".";
 
 export function validateProject(solutionContext: SolutionContext): string | undefined {
   const res = validateSettings(solutionContext.projectSettings);

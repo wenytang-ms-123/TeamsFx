@@ -3,7 +3,7 @@
 "use strict";
 
 import { HookContext, NextFunction, Middleware } from "@feathersjs/hooks";
-import { assembleError, err, Inputs, SystemError, UserError } from "@microsoft/teamsfx-api";
+import { assembleError, err, FxError, Inputs, SystemError, UserError } from "@microsoft/teamsfx-api";
 import { FxCore } from "..";
 
 /**
@@ -22,7 +22,7 @@ export const ErrorHandlerMW: Middleware = async (ctx: HookContext, next: NextFun
     await next();
     if (logger) logger.info(`[core] finish task:${ctx.method}`);
   } catch (e) {
-    let fxError = assembleError(e);
+    let fxError:FxError = assembleError(e);
     if (fxError instanceof SystemError) {
       fxError = await tryConvertToUserError(fxError);
     }
@@ -59,14 +59,7 @@ async function tryConvertToUserError(err: SystemError): Promise<UserError | Syst
   if (!msg) return err;
   for (const reg of Regs) {
     if (reg.test(msg) === true) {
-      const userError = new UserError(
-        err.name,
-        err.message,
-        err.source,
-        undefined,
-        undefined,
-        err.innerError
-      );
+      const userError = new UserError(err.source, err.message, err.name );
       userError.stack = err.stack;
       return userError;
     }

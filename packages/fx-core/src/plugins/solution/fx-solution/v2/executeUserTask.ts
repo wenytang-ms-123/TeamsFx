@@ -5,17 +5,18 @@ import {
   Result,
   ok,
   err,
-  returnUserError,
   Func,
-  returnSystemError,
   TelemetryReporter,
   AzureSolutionSettings,
   Void,
   Platform,
   UserInteraction,
-  AppStudioTokenProvider,
   SolutionSettings,
   TokenProvider,
+  NotImplementedError,
+  SystemError,
+  UserError,
+  UndefinedError,
 } from "@microsoft/teamsfx-api";
 import { getStrings, isArmSupportEnabled } from "../../../../common/tools";
 import { getAzureSolutionSettings, reloadV2Plugins } from "./utils";
@@ -43,6 +44,7 @@ import { getAllV2ResourcePluginMap, ResourcePluginsV2 } from "../ResourcePluginC
 import { Container } from "typedi";
 import { scaffoldByPlugins } from "./scaffolding";
 import { generateResourceTemplate } from "./generateResourceTemplate";
+import { FunctionRouterError } from "../../../../core";
 
 export async function executeUserTask(
   ctx: v2.Context,
@@ -63,11 +65,7 @@ export async function executeUserTask(
     if (method === "registerTeamsAppAndAad") {
       // not implemented for now
       return err(
-        returnSystemError(
-          new Error("Not implemented"),
-          "Solution",
-          SolutionError.FeatureNotSupported
-        )
+        new NotImplementedError("Solution", "registerTeamsAppAndAad")
       );
     } else if (method === "VSpublish") {
       // VSpublish means VS calling cli to do publish. It is different than normal cli work flow
@@ -75,9 +73,8 @@ export async function executeUserTask(
       // Using executeUserTask here could bypass the fx project check.
       if (inputs.platform !== "vs") {
         return err(
-          returnSystemError(
-            new Error(`VS publish is not supposed to run on platform ${inputs.platform}`),
-            "Solution",
+          new SystemError(
+            "Solution",`VS publish is not supposed to run on platform ${inputs.platform}`,
             SolutionError.UnsupportedPlatform
           )
         );
@@ -118,11 +115,7 @@ export async function executeUserTask(
   }
 
   return err(
-    returnUserError(
-      new Error(`executeUserTaskRouteFailed:${JSON.stringify(func)}`),
-      "Solution",
-      `executeUserTaskRouteFailed`
-    )
+    new FunctionRouterError("Solution", func)
   );
 }
 
@@ -131,9 +124,8 @@ export function canAddCapability(
   telemetryReporter: TelemetryReporter
 ): Result<Void, FxError> {
   if (!(settings.hostType === HostTypeOptionAzure.id)) {
-    const e = returnUserError(
-      new Error("Add capability is not supported for SPFx project"),
-      "Solution",
+    const e = new UserError(
+      "Solution","Add capability is not supported for SPFx project",
       SolutionError.FailedToAddCapability
     );
     return err(
@@ -154,9 +146,8 @@ export function canAddResource(
       settings.capabilities.includes(TabOptionItem.id)
     )
   ) {
-    const e = returnUserError(
-      new Error("Add resource is only supported for Tab app hosted in Azure."),
-      "Solution",
+    const e = new UserError(
+      "Solution", "Add resource is only supported for Tab app hosted in Azure.", 
       SolutionError.AddResourceNotSupport
     );
 
@@ -200,9 +191,8 @@ export async function addCapability(
     (capabilitiesAnswer.includes(BotOptionItem.id) ||
       capabilitiesAnswer.includes(MessageExtensionItem.id))
   ) {
-    const e = returnUserError(
-      new Error("Application already contains a Bot and/or Messaging Extension"),
-      "Solution",
+    const e = new UserError(
+      "Solution","Application already contains a Bot and/or Messaging Extension",
       SolutionError.FailedToAddCapability
     );
     return err(
@@ -339,9 +329,8 @@ export async function addResource(
 
   if (!addResourcesAnswer) {
     return err(
-      returnUserError(
-        new Error(`answer of ${AzureSolutionQuestionNames.AddResources} is empty!`),
-        "Solution",
+      new UserError(
+        "Solution", `answer of ${AzureSolutionQuestionNames.AddResources} is empty!`,
         SolutionError.InvalidInput
       )
     );
@@ -352,9 +341,8 @@ export async function addResource(
   const addApim = addResourcesAnswer.includes(AzureResourceApim.id);
 
   if ((alreadyHaveSql && addSQL) || (alreadyHaveApim && addApim)) {
-    const e = returnUserError(
-      new Error("SQL/APIM is already added."),
-      "Solution",
+    const e = new UserError(
+      "Solution", "SQL/APIM is already added.",
       SolutionError.AddResourceNotSupport
     );
     return err(
@@ -447,11 +435,7 @@ export function extractParamForRegisterTeamsAppAndAad(
 ): Result<ParamForRegisterTeamsAppAndAad, FxError> {
   if (answers == undefined) {
     return err(
-      returnSystemError(
-        new Error("Input is undefined"),
-        "Solution",
-        SolutionError.FailedToGetParamForRegisterTeamsAppAndAad
-      )
+      new UndefinedError("Solution", "input for extractParamForRegisterTeamsAppAndAad()")
     );
   }
 
@@ -465,9 +449,8 @@ export function extractParamForRegisterTeamsAppAndAad(
     const value = answers[key];
     if (value == undefined) {
       return err(
-        returnSystemError(
-          new Error(`${key} not found`),
-          "Solution",
+        new SystemError(
+          "Solution", `${key} not found`,
           SolutionError.FailedToGetParamForRegisterTeamsAppAndAad
         )
       );

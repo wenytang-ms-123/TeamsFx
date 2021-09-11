@@ -17,7 +17,6 @@ import {
   Colors,
   AzureSolutionSettings,
   Func,
-  newSystemError,
   Void,
 } from "@microsoft/teamsfx-api";
 import { AppStudioPluginImpl } from "./plugin";
@@ -265,19 +264,14 @@ export class AppStudioPlugin implements Plugin {
           TelemetryUtils.sendSuccessEvent(TelemetryEventName.publish);
           return ok(undefined);
         }
-        const innerError = error.innerError ? `innerError: ${error.innerError}` : "";
-        error.message = `${error.message} ${innerError}`;
         TelemetryUtils.sendErrorEvent(TelemetryEventName.publish, error);
         return err(error);
       } else {
-        const publishFailed = new SystemError(
-          AppStudioError.TeamsAppPublishFailedError.name,
-          error.message,
-          Constants.PLUGIN_NAME,
-          undefined,
-          undefined,
-          error
-        );
+        const publishFailed = new SystemError({
+          error: error,
+          source:  Constants.PLUGIN_NAME,
+          name:  AppStudioError.TeamsAppPublishFailedError.name,
+        });
         TelemetryUtils.sendErrorEvent(TelemetryEventName.publish, publishFailed);
         return err(publishFailed);
       }
@@ -365,10 +359,10 @@ export class AppStudioPlugin implements Plugin {
         );
       }
       return err(
-        newSystemError(
+        new SystemError(
           Constants.PLUGIN_NAME,
-          "InvalidParam",
           `Invalid param:${JSON.stringify(func)}`,
+          "InvalidParam",
           Links.ISSUE_LINK
         )
       );
@@ -376,10 +370,10 @@ export class AppStudioPlugin implements Plugin {
       return await this.migrateV1Project(ctx);
     }
     return err(
-      newSystemError(
+      new SystemError(
         Constants.PLUGIN_NAME,
-        "FunctionRouterError",
         `Failed to route function call:${JSON.stringify(func)}`,
+        "FunctionRouterError",
         Links.ISSUE_LINK
       )
     );

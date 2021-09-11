@@ -2,23 +2,20 @@ import {
   v2,
   Inputs,
   FxError,
-  LogProvider,
   Result,
   ok,
   err,
   AzureSolutionSettings,
-  combine,
   Void,
-  returnUserError,
   PermissionRequestProvider,
-  returnSystemError,
   Json,
+  UserError,
+  SystemError,
 } from "@microsoft/teamsfx-api";
 import { LocalSettingsTeamsAppKeys } from "../../../../common/localSettingsConstants";
 import { SolutionError } from "../constants";
 import { AzureResourceApim, AzureResourceFunction, AzureResourceSQL, AzureSolutionQuestionNames, BotOptionItem, HostTypeOptionAzure, MessageExtensionItem, TabOptionItem } from "../question";
 import {
-  getActivatedResourcePlugins,
   getActivatedV2ResourcePlugins,
 } from "../ResourcePluginContainer";
 
@@ -71,9 +68,7 @@ export async function ensurePermissionRequest(
 
   if (!isAzureProject(solutionSettings)) {
     return err(
-      returnUserError(
-        new Error("Cannot update permission for SPFx project"),
-        "Solution",
+      new UserError( "Solution","Cannot update permission for SPFx project",
         SolutionError.CannotUpdatePermissionForSPFx
       )
     );
@@ -92,9 +87,8 @@ export function parseTeamsAppTenantId(
 ): Result<string, FxError> {
   if (appStudioToken === undefined) {
     return err(
-      returnSystemError(
-        new Error("Graph token json is undefined"),
-        "Solution",
+      new SystemError(
+        "Solution","Graph token json is undefined",
         SolutionError.NoAppStudioToken
       )
     );
@@ -107,9 +101,7 @@ export function parseTeamsAppTenantId(
     teamsAppTenantId.length === 0
   ) {
     return err(
-      returnSystemError(
-        new Error("Cannot find teams app tenant id"),
-        "Solution",
+      new SystemError( "Solution", "Cannot find teams app tenant id",
         SolutionError.NoTeamsAppTenantId
       )
     );
@@ -136,9 +128,8 @@ export function fillInSolutionSettings(solutionSettings: AzureSolutionSettings, 
   const capabilities = (answers[AzureSolutionQuestionNames.Capabilities] as string[]) || [];
   if (!capabilities || capabilities.length === 0) {
     return err(
-      returnSystemError(
-        new Error("capabilities is empty"),
-        "Solution",
+      new SystemError(
+        "Solution", "capabilities is empty", 
         SolutionError.InternelError
       )
     );
@@ -148,9 +139,8 @@ export function fillInSolutionSettings(solutionSettings: AzureSolutionSettings, 
     hostType = HostTypeOptionAzure.id;
   if (!hostType) {
     return err(
-      returnSystemError(
-        new Error("hostType is undefined"),
-        "Solution",
+      new SystemError(
+        "Solution", "hostType is undefined",
         SolutionError.InternelError
       )
     );

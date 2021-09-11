@@ -5,7 +5,7 @@
 import * as path from "path";
 import { funcPluginLogger as logger } from "./funcPluginLogger";
 import { DepsCheckerError } from "./errors";
-import { PluginContext, returnUserError } from "@microsoft/teamsfx-api";
+import { PluginContext, UserError } from "@microsoft/teamsfx-api";
 import { Messages, dotnetManualInstallHelpLink, defaultHelpLink, DepsCheckerEvent } from "./common";
 import { IDepsAdapter, IDepsChecker, IDepsTelemetry } from "./checker";
 import { getResourceFolder } from "../../../../..";
@@ -84,14 +84,13 @@ export class FuncPluginAdapter implements IDepsAdapter {
     const defaultAnchor = "report-issues";
     if (error instanceof DepsCheckerError) {
       const [helpLink, anchor] = this.splitHelpLink(error.helpLink);
-      throw returnUserError(error, source, anchor || defaultAnchor, helpLink, error);
+      throw new UserError(error as Error, source, anchor || defaultAnchor, helpLink);
     } else {
-      throw returnUserError(
+      throw new UserError(
         new Error(Messages.defaultErrorMessage),
         source,
         defaultAnchor,
         defaultHelpLink,
-        error
       );
     }
   }

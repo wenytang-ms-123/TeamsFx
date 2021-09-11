@@ -21,7 +21,7 @@ import {
   TabOptionItem,
 } from "../../solution/fx-solution/question";
 import { ResourcePlugins } from "../../solution/fx-solution/ResourcePluginContainer";
-import { Telemetry } from "./constants";
+import { Constants, Telemetry } from "./constants";
 import { ErrorMessage } from "./errors";
 import { SqlPluginImpl } from "./plugin";
 import { SqlResult, SqlResultFactory } from "./results";
@@ -98,37 +98,19 @@ export class SqlPlugin implements Plugin {
     try {
       return await fn();
     } catch (e) {
-      await DialogUtils.progressBar?.end(false);
-
-      if (!(e instanceof Error || e instanceof SystemError || e instanceof UserError)) {
-        e = new Error(e.toString());
+      if(!(e instanceof SystemError || e instanceof UserError)) {
+        e = new SystemError({error: e as Error, source: Constants.pluginNameShort, name: ErrorMessage.UnhandledError.name});
+        ctx.logProvider?.error((e as SystemError).message);
       }
-      if (!(e instanceof SystemError) && !(e instanceof UserError)) {
-        ctx.logProvider?.error(e.message);
-      }
-
-      let res: SqlResult;
-      if (e instanceof SystemError || e instanceof UserError) {
-        res = err(e);
-      } else {
-        res = err(
-          SqlResultFactory.SystemError(
-            ErrorMessage.UnhandledError.name,
-            ErrorMessage.UnhandledError.message(),
-            e
-          )
-        );
-      }
-      const errorCode = res.error.source + "." + res.error.name;
-      const errorType =
-        res.error instanceof SystemError ? Telemetry.systemError : Telemetry.userError;
+      const fxError = e as FxError;
+      const errorCode = fxError.source + "." + fxError.name;
+      const errorType = fxError instanceof SystemError ? Telemetry.systemError : Telemetry.userError;
       TelemetryUtils.init(ctx);
-      let errorMessage = res.error.message;
-      if (res.error.innerError) {
-        errorMessage += ` Detailed error: ${e.innerError.message}.`;
-      }
-      TelemetryUtils.sendErrorEvent(stage, errorCode, errorType, errorMessage);
-      return res;
+      TelemetryUtils.sendErrorEvent(stage, errorCode, errorType, fxError.message);
+      return err(fxError);
+    } 
+    finally{
+      await DialogUtils.progressBar?.end(false);
     }
   }
 }

@@ -2,272 +2,239 @@
 // Licensed under the MIT license.
 
 export interface FxError extends Error {
-  /**
-   * Custom error details.
-   */
-  innerError?: any;
-  /**
-   * Source name of error. (plugin name, eg: tab-scaffhold-plugin)
-   */
   source: string;
-  /**
-   * Time of error.
-   */
   timestamp: Date;
+  userData?: any;
 }
 
-/**
- * Users can recover by themselves, e.g., users input invalid app names.
- */
+export interface ErrorOptionBase {
+  source?: string,
+  name?: string,
+  message?: string,
+  error?: Error,
+  userData?: any;
+}
+
+export interface UserErrorOptions extends ErrorOptionBase {
+  helpLink?: string,
+}
+
+export interface SystemErrorOptions extends ErrorOptionBase {
+  issueLink?: string,
+}
+
 export class UserError extends Error implements FxError {
-  /**
-   * Custom error details .
-   */
-  innerError?: any;
-  /**
-   * Source name of error. (plugin name, eg: tab-scaffold-plugin)
-   */
   source: string;
-  /**
-   * Time of error.
-   */
   timestamp: Date;
-  /**
-   * A wiki website that shows mapping relationship between error names, descriptions, and fix solutions.
-   */
   helpLink?: string;
-
-  constructor(
-    name: string,
-    message: string,
-    source: string,
-    stack?: string,
-    helpLink?: string,
-    innerError?: any
-  ) {
-    super(message);
-    this.name = name ? name : new.target.name;
-    this.source = source;
+  userData?: any;
+  constructor(source?: string, message?: string, name?: string, helpLink?: string); //case1
+  constructor(error: Error, source?: string, name?: string, helpLink?: string);//case2
+  constructor(opt: UserErrorOptions); //case3
+  constructor(param1?: UserErrorOptions | string | Error, param2?: string, param3?: string, param4?: string) {
+    if (param1 === undefined || typeof param1 === "string") { //case 1
+      super(param2 || "");
+      this.name = param3 ? param3 : new.target.name;
+      this.source = param1 || "unknown";
+      this.helpLink = param4;
+    }
+    else if (param1 instanceof Error) {
+      //case 2
+      const error = param1 as Error;
+      super(error.message);
+      Object.assign(this, error);
+      this.name = param3 || error.name || new.target.name;
+      this.source = param2 || "unknown";
+      this.helpLink = param4;
+    }
+    else {
+      //case3
+      const option = param1 as UserErrorOptions;
+      if (option.error) {
+        const arr: string[] = [];
+        if (option.message) arr.push(option.message);
+        if (option.error.message) arr.push(option.error.message);
+        const message = arr.join(", ") || "";
+        super(message);
+        this.name = option.name || option.error.name || new.target.name;
+      }
+      else {
+        super(option.message || "");
+        this.name = option.name || new.target.name;
+      }
+      this.helpLink = param1.helpLink;
+      this.source = param1.source || "unknown";
+      this.userData = param1.userData;
+    }
     this.timestamp = new Date();
-    this.helpLink = helpLink;
-    this.innerError = innerError;
-    if (typeof (Error as any).captureStackTrace === "function") {
-      (Error as any).captureStackTrace(this, new.target);
-    }
-    if (typeof Object.setPrototypeOf === "function") {
-      Object.setPrototypeOf(this, new.target.prototype);
-    } else {
-      (this as any).__proto__ = new.target.prototype;
-    }
-  }
-
-  static build(source: string, name?: string, message?: string, helpLink?: string): UserError;
-  static build(source: string, error: Error, helpLink?: string): UserError;
-  static build(
-    source: string,
-    nameOrError?: string | Error,
-    messageOrHelplink?: string,
-    helpLink?: string
-  ): UserError {
-    let error: UserError;
-    if (nameOrError !== undefined && nameOrError instanceof Error) {
-      const err = nameOrError as Error;
-      error = new UserError(err.name, err.message, source, undefined, messageOrHelplink);
-      Object.assign(this, err);
-      error.name = err.name;
-      error.stack = err.stack;
-    } else {
-      error = new UserError(
-        nameOrError || "",
-        messageOrHelplink || "",
-        source,
-        undefined,
-        helpLink
-      );
-    }
-    error.timestamp = new Date();
-    return error;
+    Error.captureStackTrace(this, new.target);
+    Object.setPrototypeOf(this, new.target.prototype);
   }
 }
 
-/**
- * Users cannot handle it by themselves.
- */
 export class SystemError extends Error implements FxError {
-  /**
-   * Custom error details.
-   */
-  innerError?: any;
-  /**
-   * Source name of error. (plugin name, eg: tab-scaffold-plugin)
-   */
   source: string;
-  /**
-   * Time of error.
-   */
   timestamp: Date;
-  /**
-   * A github issue page where users can submit a new issue.
-   */
   issueLink?: string;
-
-  /**
-   * data that only be reported to github issue  manually by user and will not be reported as telemetry data
-   */
-  userData?: string;
-
-  constructor(
-    name: string,
-    message: string,
-    source: string,
-    stack?: string,
-    issueLink?: string,
-    innerError?: any
-  ) {
-    super(message);
-    this.name = name ? name : new.target.name;
-    this.source = source;
+  userData?: any;
+  constructor(source?: string, message?: string, name?: string, issueLink?: string); //case1
+  constructor(error: Error, source?: string, name?: string, issueLink?: string);//case2
+  constructor(opt: SystemErrorOptions); //case3
+  constructor(param1?: SystemErrorOptions | string | Error, param2?: string, param3?: string, param4?: string) {
+    if (param1 === undefined || typeof param1 === "string") { //case 1
+      super(param2 || "");
+      this.name = param3 ? param3 : new.target.name;
+      this.source = param1 || "unknown";
+      this.issueLink = param4;
+    }
+    else if (param1 instanceof Error) {
+      //case 2
+      const error = param1 as Error;
+      super(error.message);
+      Object.assign(this, error);
+      this.name = param3 || error.name || new.target.name;
+      this.source = param2 || "unknown";
+      this.issueLink = param4;
+    }
+    else {
+      //case4 case3
+      const option = param1 as SystemErrorOptions;
+      if (option.error) {
+        const arr: string[] = [];
+        if (option.message) arr.push(option.message);
+        if (option.error.message) arr.push(option.error.message);
+        const message = arr.join(", ") || "";
+        super(message);
+        this.name = option.name || option.error.name || new.target.name;
+      }
+      else {
+        super(option.message || "");
+        this.name = option.name || new.target.name;
+      }
+      this.issueLink = param1.issueLink;
+      this.source = param1.source || "unknown";
+      this.userData = param1.userData;
+    }
     this.timestamp = new Date();
-    this.issueLink = issueLink;
-    this.innerError = innerError;
-    if (typeof (Error as any).captureStackTrace === "function") {
-      (Error as any).captureStackTrace(this, new.target);
-    }
-    if (typeof Object.setPrototypeOf === "function") {
-      Object.setPrototypeOf(this, new.target.prototype);
-    } else {
-      (this as any).__proto__ = new.target.prototype;
-    }
-  }
-
-  static build(source: string, name?: string, message?: string, issueLink?: string): SystemError;
-  static build(source: string, error: Error, issueLink?: string): SystemError;
-  static build(
-    source: string,
-    nameOrError?: string | Error,
-    messageOrIssuelink?: string,
-    issueLink?: string
-  ): SystemError {
-    let error: SystemError;
-    if (nameOrError !== undefined && nameOrError instanceof Error) {
-      const err = nameOrError as Error;
-      error = new SystemError(err.name, err.message, source, undefined, messageOrIssuelink);
-      Object.assign(this, err);
-      error.name = err.name;
-      error.stack = err.stack;
-    } else {
-      error = new SystemError(
-        nameOrError || "",
-        messageOrIssuelink || "",
-        source,
-        undefined,
-        issueLink
-      );
-    }
-    error.timestamp = new Date();
-    return error;
+    Error.captureStackTrace(this, new.target);
+    Object.setPrototypeOf(this, new.target.prototype);
   }
 }
-
-/**
- *
- * @param e Original error
- * @param source Source name of error. (plugin name, eg: tab-scaffhold-plugin)
- * @param name Name of error. (error name, eg: Dependency not found)
- * @param helpLink A wiki website that shows mapping relationship between error names, descriptions, and fix solutions.
- * @param innerError Custom error details.
- *
- * @returns UserError.
- */
-export function returnUserError(
-  e: Error,
-  source: string,
-  name: string,
-  helpLink?: string,
-  innerError?: any
-): UserError {
-  if (!name) {
-    return new UserError(e.name, e.message, source, e.stack, helpLink, innerError);
-  } else {
-    return new UserError(name, e.message, source, e.stack, helpLink, innerError);
-  }
-}
-
-/**
- *
- * @param e Original error
- * @param source Source name of error. (plugin name, eg: tab-scaffhold-plugin)
- * @param name Name of error. (error name, eg: Dependency not found)
- * @param issueLink A github issue page where users can submit a new issue.
- * @param innerError Custom error details.
- *
- * @returns SystemError.
- */
-export function returnSystemError(
-  e: Error,
-  source: string,
-  name: string,
-  issueLink?: string,
-  innerError?: any
-): SystemError {
-  if (!name) {
-    return new SystemError(e.name, e.message, source, e.stack, issueLink, innerError);
-  } else {
-    return new SystemError(name, e.message, source, e.stack, issueLink, innerError);
-  }
-}
-
-export function newUserError(
-  source: string,
-  name: string,
-  message: string,
-  helpLink?: string,
-  innerError?: any
-): UserError {
-  return new UserError(name, message, source, undefined, helpLink, innerError);
-}
-
-export function newSystemError(
-  source: string,
-  name: string,
-  message: string,
-  issueLink?: string,
-  innerError?: any
-): SystemError {
-  return new SystemError(name, message, source, undefined, issueLink, innerError);
-}
-
-export const UserCancelError: UserError = new UserError("UserCancel", "UserCancel", "UI");
 
 export function assembleError(e: any, source?: string): FxError {
   if (e instanceof UserError || e instanceof SystemError) return e;
   if (!source) source = "unknown";
   const type = typeof e;
   if (type === "string") {
-    return new SystemError("Error", e, source, undefined, undefined, e);
-  } else if (type === "object") {
-    if (e.code || e.name || e.message) {
-      const fxError = new SystemError(
-        e.code || e.name || "Error",
-        e.message || JSON.stringify(e, Object.getOwnPropertyNames(e)),
-        source,
-        undefined,
-        undefined,
-        e
-      );
-      Object.assign(fxError, e);
-      if (e.stack) {
-        fxError.stack = e.stack;
-      }
-      return fxError;
-    }
+    return new UnknownError(source, e as string);
+  } else if (e instanceof Error) {
+    const err = e as Error;
+    const fxError = new SystemError(err, source);
+    fxError.stack = err.stack;
+    return fxError;
+  } else {
+    return new UnknownError(source, JSON.stringify(e));
   }
-  return new SystemError(
-    "Error",
-    e ? JSON.stringify(e, Object.getOwnPropertyNames(e)) : "undefined",
-    source,
-    undefined,
-    undefined,
-    e
-  );
+}
+
+export class UnknownError extends SystemError {
+  constructor(source?: string, message?: string) {
+    super({ source: source || "API", message: message});
+  }
+}
+
+export class UserCancelError extends UserError {
+  constructor(source?: string) {
+    super({ source: source || "API" });
+  }
+}
+
+export class EmptyOptionError extends SystemError {
+  constructor(source?: string) {
+    super({ source: source || "API" });
+  }
+}
+
+export class PathAlreadyExistsError extends UserError {
+  constructor(source: string, path: string) {
+    super({ source: source, message: `Path ${path} already exists.` });
+  }
+}
+
+export class PathNotExistError extends UserError {
+  constructor(source: string, path: string) {
+    super({ source: source, message: `Path ${path} does not exist.` });
+  }
+}
+
+export class ObjectAlreadyExistsError extends UserError {
+  constructor(source: string, name: string) {
+    super({ source: source, message: `${name} already exists.` });
+  }
+}
+
+export class ObjectNotExistError extends UserError {
+  constructor(source: string, name: string) {
+    super({ source: source, message: `${name} does not exist.` });
+  }
+}
+
+export class UndefinedError extends SystemError {
+  constructor(source: string, name: string) {
+    super({ source: source, message: `${name} is undefined, which is not expected` });
+  }
+}
+
+export class NotImplementedError extends SystemError {
+  constructor(source: string, method: string) {
+    super({ source: source, message: `Method not implemented:${method}` });
+  }
+}
+
+export class WriteFileError extends SystemError {
+  constructor(source: string, e: Error) {
+    super({ source: source, error: e, name: "WriteFileError"});
+  }
+}
+
+export class ReadFileError extends SystemError {
+  constructor(source: string, e: Error) {
+    super({ source: source, error: e , name: "ReadFileError"});
+  }
+}
+
+export class NoProjectOpenedError extends UserError {
+  constructor(source: string) {
+    super({ source: source, message: "No project opened, you can create a new project or open an existing one." });
+  }
+}
+
+export class ConcurrentError extends UserError {
+  constructor(source: string) {
+    super({ source: source, message: "Concurrent operation error, please wait until the running task finish or you can reload the window to cancel it." });
+  }
+}
+
+export class InvalidInputError extends UserError {
+  constructor(source: string, name: string, reason?: string) {
+    super({ source: source, message: `Input '${name}' is invalid: ${reason}` });
+  }
+}
+
+export class InvalidProjectError extends UserError {
+  constructor(source: string, msg?: string) {
+    super({ source: source, message: `The command only works for project created by Teamsfx Toolkit. ${msg ? ": " + msg : ""}` });
+  }
+}
+
+export class InvalidObjectError extends UserError {
+  constructor(source: string, name: string, reason?: string) {
+    super({ source: source, message: `${name} is invalid: ${reason}` });
+  }
+}
+
+export class InvalidOperationError extends UserError {
+  constructor(source: string, name: string, reason?: string) {
+    super({ source: source, message: `Invalid operation: ${name} ${reason}` });
+  }
 }

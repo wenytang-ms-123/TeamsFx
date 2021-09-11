@@ -20,12 +20,10 @@ class FxResultFactory {
   ): FxResult {
     return err(
       new UserError(
-        name,
-        errorMessage,
         this.source,
-        stack,
+        errorMessage,
+        name,
         helpLink ?? this.defaultHelpLink,
-        innerError
       )
     );
   }
@@ -39,12 +37,10 @@ class FxResultFactory {
   ): FxResult {
     return err(
       new SystemError(
-        name,
-        errorMessage,
         this.source,
-        stack,
+        errorMessage,
+        name,
         issueLink ?? this.defaultIssueLink,
-        innerError
       )
     );
   }

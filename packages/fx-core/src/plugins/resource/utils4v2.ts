@@ -9,6 +9,7 @@ import {
   FxError,
   Inputs,
   Json,
+  NoProjectOpenedError,
   ok,
   Plugin,
   PluginContext,
@@ -28,11 +29,11 @@ import {
 } from "@microsoft/teamsfx-api/build/v2";
 import { CryptoDataMatchers } from "../../common";
 import { ArmResourcePlugin, ScaffoldArmTemplateResult } from "../../common/armInterface";
-import { newEnvInfo, NoProjectOpenedError, PluginHasNoTaskImpl } from "../../core";
+import { CoreSource, newEnvInfo, PluginHasNoTaskImpl } from "../../core";
 import { GLOBAL_CONFIG, ARM_TEMPLATE_OUTPUT } from "../solution/fx-solution/constants";
 
 export function convert2PluginContext(ctx: Context, inputs: Inputs): PluginContext {
-  if (!inputs.projectPath) throw NoProjectOpenedError();
+  if (!inputs.projectPath) throw new NoProjectOpenedError(CoreSource);
   const pluginContext: PluginContext = {
     root: inputs.projectPath,
     config: new ConfigMap(),
@@ -53,9 +54,9 @@ export async function scaffoldSourceCodeAdapter(
   plugin: Plugin & ArmResourcePlugin
 ): Promise<Result<Void, FxError>> {
   if (!plugin.scaffold && !plugin.postScaffold)
-    return err(PluginHasNoTaskImpl(plugin.displayName, "scaffold"));
+    return err(new PluginHasNoTaskImpl(plugin.displayName, "scaffold"));
   if (!inputs.projectPath) {
-    return err(NoProjectOpenedError());
+    return err(new NoProjectOpenedError(CoreSource));
   }
   const pluginContext: PluginContext = convert2PluginContext(ctx, inputs);
 
@@ -88,7 +89,7 @@ export async function generateResourceTemplateAdapter(
   plugin: Plugin & ArmResourcePlugin
 ): Promise<Result<ResourceTemplate, FxError>> {
   if (!plugin.generateArmTemplates)
-    return err(PluginHasNoTaskImpl(plugin.displayName, "generateArmTemplates"));
+    return err(new PluginHasNoTaskImpl(plugin.displayName, "generateArmTemplates"));
   const pluginContext: PluginContext = convert2PluginContext(ctx, inputs);
   const armRes = await plugin.generateArmTemplates(pluginContext);
   if (armRes.isErr()) {
@@ -106,7 +107,7 @@ export async function provisionResourceAdapter(
   tokenProvider: TokenProvider,
   plugin: Plugin
 ): Promise<Result<ResourceProvisionOutput, FxError>> {
-  if (!plugin.provision) return err(PluginHasNoTaskImpl(plugin.displayName, "provision"));
+  if (!plugin.provision) return err(new PluginHasNoTaskImpl(plugin.displayName, "provision"));
   const pluginContext: PluginContext = convert2PluginContext(ctx, inputs);
   pluginContext.azureAccountProvider = tokenProvider.azureAccountProvider;
   pluginContext.appStudioToken = tokenProvider.appStudioToken;
@@ -159,7 +160,7 @@ export async function configureResourceAdapter(
   tokenProvider: TokenProvider,
   plugin: Plugin & ArmResourcePlugin
 ): Promise<Result<Void, FxError>> {
-  if (!plugin.postProvision) return err(PluginHasNoTaskImpl(plugin.displayName, "postProvision"));
+  if (!plugin.postProvision) return err(new PluginHasNoTaskImpl(plugin.displayName, "postProvision"));
   const pluginContext: PluginContext = convert2PluginContext(ctx, inputs);
   pluginContext.azureAccountProvider = tokenProvider.azureAccountProvider;
   setConfigs(plugin.name, pluginContext, provisionOutputs);
@@ -179,7 +180,7 @@ export async function deployAdapter(
   tokenProvider: AzureAccountProvider,
   plugin: Plugin & ArmResourcePlugin
 ): Promise<Result<Void, FxError>> {
-  if (!plugin.deploy) return err(PluginHasNoTaskImpl(plugin.displayName, "deploy"));
+  if (!plugin.deploy) return err(new PluginHasNoTaskImpl(plugin.displayName, "deploy"));
   const pluginContext: PluginContext = convert2PluginContext(ctx, inputs);
   pluginContext.azureAccountProvider = tokenProvider;
   const json: Json = {};
@@ -218,7 +219,7 @@ export async function provisionLocalResourceAdapter(
   tokenProvider: TokenProvider,
   plugin: Plugin & ArmResourcePlugin
 ): Promise<Result<Json, FxError>> {
-  if (!plugin.localDebug) return err(PluginHasNoTaskImpl(plugin.displayName, "localDebug"));
+  if (!plugin.localDebug) return err(new PluginHasNoTaskImpl(plugin.displayName, "localDebug"));
   const pluginContext: PluginContext = convert2PluginContext(ctx, inputs);
   setLocalSettingsV1(pluginContext, localSettings);
   pluginContext.appStudioToken = tokenProvider.appStudioToken;
@@ -239,7 +240,7 @@ export async function configureLocalResourceAdapter(
   tokenProvider: TokenProvider,
   plugin: Plugin & ArmResourcePlugin
 ): Promise<Result<Json, FxError>> {
-  if (!plugin.postLocalDebug) return err(PluginHasNoTaskImpl(plugin.displayName, "postLocalDebug"));
+  if (!plugin.postLocalDebug) return err(new PluginHasNoTaskImpl(plugin.displayName, "postLocalDebug"));
   const pluginContext: PluginContext = convert2PluginContext(ctx, inputs);
   setLocalSettingsV1(pluginContext, localSettings);
   pluginContext.appStudioToken = tokenProvider.appStudioToken;
@@ -260,7 +261,7 @@ export async function executeUserTaskAdapter(
   plugin: Plugin
 ): Promise<Result<unknown, FxError>> {
   if (!plugin.executeUserTask)
-    return err(PluginHasNoTaskImpl(plugin.displayName, "executeUserTask"));
+    return err(new PluginHasNoTaskImpl(plugin.displayName, "executeUserTask"));
   const pluginContext: PluginContext = convert2PluginContext(ctx, inputs);
   const res = await plugin.executeUserTask(func, pluginContext);
   if (res.isErr()) return err(res.error);
@@ -272,7 +273,7 @@ export async function getQuestionsForScaffoldingAdapter(
   inputs: Inputs,
   plugin: Plugin
 ): Promise<Result<QTreeNode | undefined, FxError>> {
-  if (!plugin.getQuestions) return err(PluginHasNoTaskImpl(plugin.displayName, "getQuestions"));
+  if (!plugin.getQuestions) return err(new PluginHasNoTaskImpl(plugin.displayName, "getQuestions"));
   const pluginContext: PluginContext = convert2PluginContext(ctx, inputs);
   return await plugin.getQuestions(Stage.create, pluginContext);
 }

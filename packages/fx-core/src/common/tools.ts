@@ -11,9 +11,9 @@ import {
   ok,
   OptionItem,
   Result,
-  returnSystemError,
-  returnUserError,
   SubscriptionInfo,
+  SystemError,
+  UserError,
   UserInteraction,
 } from "@microsoft/teamsfx-api";
 import AdmZip from "adm-zip";
@@ -25,6 +25,7 @@ import * as Handlebars from "handlebars";
 import * as path from "path";
 import { promisify } from "util";
 import * as uuid from "uuid";
+import { CoreSource } from "../core";
 import { getResourceFolder } from "../folder";
 import { ConstantString, FeatureFlagName } from "./constants";
 
@@ -349,7 +350,7 @@ export async function askSubscription(
 
   if (subscriptions.length === 0) {
     return err(
-      returnUserError(new Error("Failed to find a subscription."), "Core", "NoSubscriptionFound")
+      new UserError(CoreSource, "Failed to find a subscription.", "NoSubscriptionFound")
     );
   }
   let resultSub = subscriptions.find((sub) => sub.subscriptionId === activeSubscriptionId);
@@ -381,7 +382,7 @@ export async function askSubscription(
     }
     if (selectedSub === undefined) {
       return err(
-        returnSystemError(new Error("Subscription not found"), "Core", "NoSubscriptionFound")
+        new SystemError(CoreSource, "Failed to find a subscription.", "NoSubscriptionFound")
       );
     }
     resultSub = selectedSub;
@@ -421,11 +422,7 @@ export async function generateBicepFiles(
     return ok(updatedBicepFile);
   } catch (error) {
     return err(
-      returnSystemError(
-        new Error(`Failed to generate bicep file ${templateFilePath}. Reason: ${error.message}`),
-        "Core",
-        "BicepGenerationError"
-      )
+      new SystemError( CoreSource,  `Failed to generate bicep file ${templateFilePath}. Reason: ${error.message}`, "BicepGenerationError")
     );
   }
 }

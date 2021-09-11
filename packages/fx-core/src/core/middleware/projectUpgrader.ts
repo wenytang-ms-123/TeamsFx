@@ -9,24 +9,22 @@ import {
   ok,
   ProjectSettings,
   Result,
-  SystemError,
   ProjectSettingsFileName,
   InputConfigsFolderName,
   EnvProfileFileNameTemplate,
-} from "@microsoft/teamsfx-api";
-import * as fs from "fs-extra";
-import * as path from "path";
-import { basename } from "path";
-import {
-  ContextUpgradeError,
-  CoreHookContext,
-  FxCore,
   NoProjectOpenedError,
   PathNotExistError,
   ReadFileError,
   WriteFileError,
+} from "@microsoft/teamsfx-api";
+import * as fs from "fs-extra";
+import * as path from "path";
+import {
+  ContextUpgradeError,
+  CoreHookContext,
+  FxCore,
 } from "..";
-import { dataNeedEncryption, deserializeDict, serializeDict } from "../..";
+import { deserializeDict, serializeDict } from "../..";
 import { isMultiEnvEnabled } from "../../common";
 import { readJson } from "../../common/fileUtils";
 import {
@@ -37,8 +35,8 @@ import {
   TelemetryProperty,
   TelemetrySuccess,
 } from "../../common/telemetry";
-import { LocalCrypto } from "../crypto";
 import { environmentManager } from "../environment";
+import { CoreSource } from "../error";
 
 const resourceContext = [
   {
@@ -81,11 +79,11 @@ export async function upgradeContext(ctx: CoreHookContext): Promise<Result<undef
   const inputs = ctx.arguments[ctx.arguments.length - 1] as Inputs;
 
   if (!inputs.projectPath) {
-    return err(NoProjectOpenedError());
+    return err(new NoProjectOpenedError(CoreSource));
   }
   const projectPathExist = await fs.pathExists(inputs.projectPath);
   if (!projectPathExist) {
-    return err(PathNotExistError(inputs.projectPath));
+    return err(new PathNotExistError(CoreSource, inputs.projectPath));
   }
   const confFolderPath = isMultiEnvEnabled()
     ? path.resolve(inputs.projectPath, `.${ConfigFolderName}`, InputConfigsFolderName)
@@ -127,7 +125,7 @@ export async function upgradeContext(ctx: CoreHookContext): Promise<Result<undef
     context = await readContext(contextPath);
     userData = await readUserData(userDataPath);
   } catch (error) {
-    const errorObject = ReadFileError(error);
+    const errorObject = new ReadFileError(CoreSource, error);
     core?.tools?.logProvider?.info(errorObject.message);
     sendTelemetryErrorEvent(Component.core, TelemetryEvent.ProjectUpgrade, errorObject);
     return err(errorObject);
@@ -162,7 +160,7 @@ export async function upgradeContext(ctx: CoreHookContext): Promise<Result<undef
     await saveContext(contextPath, context);
     await saveUserData(userDataPath, userData);
   } catch (error) {
-    const errorObject = WriteFileError(error);
+    const errorObject = new WriteFileError(CoreSource, error);
     core?.tools?.logProvider?.info(errorObject.message);
     sendTelemetryErrorEvent(Component.core, TelemetryEvent.ProjectUpgrade, errorObject);
     return err(errorObject);
