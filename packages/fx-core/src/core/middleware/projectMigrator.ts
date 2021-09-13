@@ -5,7 +5,6 @@ import {
   AppPackageFolderName,
   ConfigFolderName,
   EnvConfig,
-  PluginContext,
   InputConfigsFolderName,
   Inputs,
   err,
@@ -31,7 +30,7 @@ import { generateArmTemplate } from "../../plugins/solution/fx-solution/arm";
 import { loadSolutionContext } from "./envInfoLoader";
 
 const MigrationMessage = (stage: string) =>
-  `In order to proceed with ${stage}, we will update your project code to use the latest Teams Toolkit. We recommend to initialize your workspace with git for better tracking file changes.`;
+  `In order to continue using the latest Teams Toolkit, we will update your project code to use the latest Teams Toolkit. We recommend to initialize your workspace with git for better tracking file changes.`;
 
 export const ProjectMigratorMW: Middleware = async (ctx: CoreHookContext, next: NextFunction) => {
   const inputs = ctx.arguments[ctx.arguments.length - 1] as Inputs;
@@ -262,9 +261,83 @@ async function generateArmTempaltesFiles(ctx: CoreHookContext) {
     return error;
   }
   if (await checkFileExist(path.join(templateAzure, "parameters.template.json"))) {
-    await fs.copy(
+    await fs.move(
       path.join(templateAzure, "parameters.template.json"),
-      path.join(fxConfig, "azure.parameters.dev.json")
+      path.join(fxConfig, "parameters.deafult.json")
     );
   }
+}
+
+async function parameterParser(ctx: CoreHookContext) {
+  const inputs = ctx.arguments[ctx.arguments.length - 1] as Inputs;
+  if (!inputs.projectPath) {
+    throw NoProjectOpenedError();
+  }
+  const fx = path.join(inputs.projectPath, `.${ConfigFolderName}`);
+  const fxConfig = path.join(fx, InputConfigsFolderName);
+  const envConfig = await fs.readJson(path.join(fx, "env.default.json"));
+  const targetJson = await fs.readJson(path.join(fxConfig, "parameters.deafult.json"));
+  if (envConfig["fx-resource-frontend-hosting"]) {
+    if (envConfig["fx-resource-frontend-hosting"]["storageName"]) {
+      targetJson["parameters"]["frontendHosting_storageName"] = {
+        value: envConfig["fx-resource-frontend-hosting"]["storageName"],
+      };
+    }
+  }
+  if (envConfig["fx-resource-identity"]) {
+    if (envConfig["fx-resource-identity"]["identityName"]) {
+      targetJson["parameters"]["identity_managedIdentityName"] = {
+        value: envConfig["fx-resource-identity"]["identityName"],
+      };
+    }
+  }
+  // azure SQL
+  if (envConfig["fx-resource-azure-sql"]) {
+    if (envConfig["fx-resource-azure-sql"]["admin"]) {
+      targetJson["parameters"]["azureSql_admin"] = {
+        value: envConfig["fx-resource-azure-sql"]["admin"],
+      };
+    }
+    if (envConfig["fx-resource-azure-sql"]["sqlEndpoint"]) {
+      targetJson["parameters"]["azureSql_serverName"] = {
+        value: envConfig["fx-resource-azure-sql"]["sqlEndpoint"],
+      };
+    }
+    if (envConfig["fx-resource-azure-sql"]["databaseName"]) {
+      targetJson["parameters"]["azureSql_databaseName"] = {
+        value: envConfig["fx-resource-azure-sql"]["databaseName"],
+      };
+    }
+  }
+  //
+  if (envConfig["fx-resource-aad-app-for-teams"]) {
+    if (envConfig["fx-resource-aad-app-for-teams"]["clientId"]) {
+      targetJson["parameters"]["m365ClientId"] = {
+        value: envConfig["fx-resource-aad-app-for-teams"]["clientId"],
+      };
+    }
+    if (envConfig["fx-resouce-aad-app-for-teams"]["tenantId"]) {
+      targetJson["parameters"]["m365TenantId"] = {
+        value: envConfig["fx-resouce-aad-app-for-teams"]["tenantId"],
+      };
+    }
+    if (envConfig["fx-resouce-aad-app-for-teams"]["oauthAuthority"]) {
+      targetJson["parameters"]["m365OauthAuthorityHost"] = {
+        value: envConfig["fx-resouce-aad-app-for-teams"]["oauthAuthority"],
+      };
+    }
+  }
+
+  if (envConfig["fx-resource-simple-auth"]) {
+    if (envConfig["fx-resource-simple-auth"]["endpoint"]) {
+      targetJson["parameters"]["simpleAuth_packageUri"] = {
+        value: envConfig["fx-resource-simple-auth"]["endpoint"],
+      };
+    }
+  }
+
+  await fs.writeFile(
+    path.join(fxConfig, "parameters.deafult.json"),
+    JSON.stringify(targetJson, null, 4)
+  );
 }
