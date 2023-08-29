@@ -1,5 +1,5 @@
 module.exports = {
-    branch: 'take',
+    branch: 'dev',
     bumpDeps: true,
     generateChangelog: false,
 }
