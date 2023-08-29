@@ -11,12 +11,14 @@
     "version": "changeset version",
     "release": "changeset publish",
     "precommit": "lint-staged",
-    "clean": "pnpm -r exec rimraf node_modules"
+    "clean": "pnpm -r exec rimraf node_modules",
+    "beachball": "beachball"
   },
   "devDependencies": {
     "@changesets/cli": "^2.25.2",
     "@commitlint/cli": "^17.7.1",
     "@commitlint/config-conventional": "^12.0.1",
+    "beachball": "^2.36.0",
     "codecov": "^3.8.3",
     "codeowners": "^5.1.1",
     "cz-conventional-changelog": "^3.3.0",
@@ -31,6 +33,7 @@
     "node": ">=18",
     "pnpm": ">=8"
   },
+  "repository": "https://github.com/wenytang-ms-123/TeamsFx",
   "packageManager": "pnpm@8.6.12",
   "config": {
     "commitizen": {
